@@ -1,35 +1,40 @@
-import { useState } from 'react'
-import reactLogo from './assets/react.svg'
-import viteLogo from '/vite.svg'
-import './App.css'
+import { BrowserRouter as Router, Routes, Route, Navigate } from "react-router-dom";
+import Login from './pages/Login';
+import Register from './pages/Register';
+import Dashboard from './pages/Dashboard'
+import TopNavbar from "./components/TopNavbar";
+import SideNavbar from './components/Sidebar/SideNavbar'
+import ProfileSidebar from "./components/Sidebar/profileSidebar";
+import MiddleChatarea  from "./components/Sidebar/MiddleChatarea"
 
 function App() {
-  const [count, setCount] = useState(0)
+  return(
+   
+    <Router>
+      <div className="App">
+        <Routes>
+              {/* by default users are redirected to login */}
+              <Route path='/' element={<Navigate to='/login' replace/>}/>
 
-  return (
-    <>
-      <div>
-        <a href="https://vite.dev" target="_blank">
-          <img src={viteLogo} className="logo" alt="Vite logo" />
-        </a>
-        <a href="https://react.dev" target="_blank">
-          <img src={reactLogo} className="logo react" alt="React logo" />
-        </a>
+              {/*Authentication routes*/}
+              <Route path='/login' element={<Login/>}/>
+              <Route path="/register" element= {<Register/>}/>
+
+
+               {/* Main Dashboard */}
+               <Route path="/dashboard" element= {<Dashboard/>}/>
+               <Route path="/topnavbar" element= {<TopNavbar/>}/>
+               <Route path="/sidenavbar" element={<SideNavbar/>}/>
+               <Route path="/profilesidebar" element={<ProfileSidebar/>}/>
+               <Route path="/middlechatarea" element={<MiddleChatarea/>}/>
+
+               {/*fallback routes for unknown routes will redirect to login */}
+               <Route path="*" element={<Navigate to="/login replace"/>}/>
+          </Routes>
       </div>
-      <h1>Vite + React</h1>
-      <div className="card">
-        <button onClick={() => setCount((count) => count + 1)}>
-          count is {count}
-        </button>
-        <p>
-          Edit <code>src/App.jsx</code> and save to test HMR
-        </p>
-      </div>
-      <p className="read-the-docs">
-        Click on the Vite and React logos to learn more
-      </p>
-    </>
+    </Router>
+
   )
 }
 
-export default App
+export default App;
