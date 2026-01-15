@@ -5,9 +5,14 @@ const http = require('http')
 const PORT = process.env.PORT || 5001;
 const auth = require('./middleware/auth');
 
+//import routes 
 const Message = require('./models/Message')
 const ChatRoom = require('./models/ChatRoom')
-
+const messageRoutes = require('./routes/messages');
+const chatRoomRoutes = require('./routes/chatRooms');
+const userRoutes = require('./routes/user');
+const dmMessageRoutes = require('./routes/dmMessages');
+app.use("/uploads", express.static("uploads"));
 
 //import mongoose Library and connect it
 const mongoose = require('mongoose')
@@ -24,7 +29,7 @@ const server = http.createServer(app);
 const socketIo = require('socket.io')
 const io = socketIo(server,{
     cors:{
-        origin: "http://localhost:3000",
+        origin: "http://localhost:5173",
         methods: ["GET", "POST"]
     }
 });
@@ -37,11 +42,16 @@ app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
 
+
 //Import routes
 const authRoutes = require('./routes/auth');
-const chatRoomRoutes = require('./routes/chatRooms');
+
+app.use('/api/users', require('./routes/user'));
+app.use('/api/messages', require('./routes/messages'));
 app.use('/api/auth', authRoutes);
-app.use('/api/chatrooms', chatRoomRoutes)
+app.use('/api/chatrooms', chatRoomRoutes);
+app.use('/api/dmmessages', dmMessageRoutes);
+
 
 //Socket.io Events ...fires when client connect to your server with ther unique ifd
 io.on('connection', (socket) => {
@@ -62,16 +72,31 @@ io.on('connection', (socket) => {
     
     //send message  and save message to datatbase 
      socket.on('sendMessage', async (data) => {
+        console.log("sendMessage received:", data)
         try {
-            const message = new Message(data);
-            await message.save();
+            const message = new Message({
+            sender: data.sender?.id || data.sender?._id || data.sender,
+            chatRoom: data.chatRoom || data.room, 
+            content: data.content,
+            createdAt: data.createdAt || new Date()
+        });
+     
+     
+     
+     
+       await message.save();
 
             //get sender's username 
-            await message.populate('sender', 'username');
+            await message.populate('sender', 'fullname email profilePhoto');
+
+            await message.populate('chatRoom', 'name');
 
             //send to everyone in the room  and include sender's details 
-            io.to(data.chatRoom).emit('newMessage', message);
-            console.log(`Message sent to room ${data.chatRoom}: ${data.content}`)
+            const roomId = message.chatRoom?.name || message.chatRoom?._id || data.room || data.chatRoom;
+              io.to(roomId).emit('newMessage', message);
+        
+            console.log(`📢 Message broadcast to room ${roomId}: ${message.content}`);
+    
         
             } catch (error) {
                 socket.emit('error', error.message)
@@ -94,6 +119,8 @@ io.on('connection', (socket) => {
         })
 })
 
+
+
  
 
 // Test route
@@ -113,7 +140,7 @@ app.get('/', (req, res) => {
 });
 
 
-app.get('api/protected', auth, (req,res)=> {
+app.get('/api/protected', auth, (req,res)=> {
     res.json ({
         message:'You accessed a protected route',
         user:req.user

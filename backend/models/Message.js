@@ -2,11 +2,11 @@ const mongoose = require('mongoose');
 
 const messageSchema = new mongoose.Schema({
 
-    Read:{
+    read:{
         type: Boolean,
         default: false 
     },
-    Sender: {
+    sender: {
         type: mongoose.Schema.Types.ObjectId, //object id is mongodb  unique identifier 
         ref: 'User', //ref create a relationship to the user model
         required: true,
@@ -14,14 +14,14 @@ const messageSchema = new mongoose.Schema({
     receiver: {
         type: mongoose.Schema.Types.ObjectId, //mongose.Schema contains all the datatype mongoose supports
         ref: 'User',
-        required: true
+        required: false
     },
     chatRoom: {
         type: mongoose.Schema.Types.ObjectId,
         ref: 'ChatRoom',
-        required: true  //  
+        required: false //  
     },
-    Content: {
+    content: {
         type: String,
         required: true,
         trim: true,
@@ -32,13 +32,26 @@ const messageSchema = new mongoose.Schema({
         enum: ['text', 'image', 'file'], // enumuration it is a way to restrict a field to only accept specific predefined values
         default: 'text'
     },
-    chatRoom: {
-        type: mongoose.Schema.Types.ObjectId,
-        ref: 'ChatRoom'
-    }
+     //  FIELDS FOR DMs:
+    isDM: {
+        type: Boolean,
+        default: false
     },
-     {timestamps:true
-
-})
+    
+    dmRoomId: {
+        type: String,
+        sparse: true  // Allows null/undefined, doesn't require unique if null
+    },
+    
+    dmParticipants: [{
+        type: mongoose.Schema.Types.ObjectId,
+        ref: 'User'
+    }]
+  
+    },
+     {timestamps:true}
+    )
 messageSchema.index({chatRoom:1, createdAt: -1})
-module.export = mongoose.model('message', messageSchema)
+messageSchema.index({ dmRoomId: 1, createdAt: -1 });
+messageSchema.index({ isDM: 1 });
+module.exports = mongoose.model('message', messageSchema)
