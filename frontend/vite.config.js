@@ -7,4 +7,19 @@ export default defineConfig({
     react(), 
     tailwindcss() 
   ],
+  define: {
+    global: 'globalThis', 
+    'process.env': '{}',
+
+  },
+   resolve: {
+    alias: {
+      stream: 'stream-browserify',
+      util: 'util',
+      buffer: 'buffer',
+    },
+      optimizeDeps: {
+     include: ['simple-peer', 'buffer', 'stream-browserify'],
+  },
+  },
 })

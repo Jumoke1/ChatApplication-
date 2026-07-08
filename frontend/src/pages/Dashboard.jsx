@@ -2,7 +2,7 @@ import TopNavbar from "../components/TopNavbar";
 import SideNavBar from "../components/Sidebar/SideNavbar";
 import ProfileSidebar from "../components/Sidebar/profileSidebar";
 import { useSocket } from '../context/SocketContext';
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useState, useCallback } from "react";
 import MiddleChatarea from "../components/Sidebar/MiddleChatarea";
 import api from '../api';
 import { useNavigate } from "react-router-dom";
@@ -11,53 +11,167 @@ import UserSearchModal from "../components/UserSearchModal";
 const Dashboard = () => {
     const { socket, isConnected } = useSocket();
     const [user, setUser] = useState(null);
-    console.log(user);
-  
-    const [currentRoom, setCurrentRoom] = useState('general');
+    const [recentDms, setRecentDMs] = useState([]);
+    const [users, setUsers] = useState([]);
+    const [channels, setChannels] = useState([]);
+    const [currentRoom, setCurrentRoom] = useState(null);
     const [messages, setMessages] = useState([]);
     const navigate = useNavigate();
     const [loading, setLoading] = useState(true);
-    const [activeDM, setActiveDM]= useState(null);
-    const [dmMessages,  setDmMessages] = useState({});
+    const [activeDM, setActiveDM] = useState(null);
+    const [dmMessages, setDmMessages] = useState({});
     const [showUserSearch, setShowUserSearch] = useState(false);
-    
+    const [scrollToMessageId, setScrollToMessageId] = useState(null);
+    const [isDarkMode, setIsDarkMode] = useState(false);
 
-    //Add this fuction:
-    const handleDm = async (selectedUser) => {
-        try{
-            console.log('Starting DM with:' , selectedUser);
+    // just log when socket connects (helps with debugging)
+    useEffect(() => {
+        if (socket) {
+            console.log('🔌 Socket connected:', socket.id);
+        }
+    }, [socket]);
 
-            //generate dm room id 
-            const dmRoomId = `dm_${selectedUser.id || selectedUser._id}`;
-            console.log('DM Room ID:', dmRoomId);
+    // load all available channels and set "general" as the default
+    useEffect(() => {
+        const fetchChannels = async () => {
+            try {
+                const response = await api.get('/chatrooms');
+                const channelsData = Array.isArray(response.data) ? response.data : 
+                                    response.data.data || [];
+                setChannels(channelsData);
+                
+                const generalChannel = channelsData.find(ch => ch.name === 'general');
+                if (generalChannel) {
+                    setCurrentRoom(generalChannel);
+                    console.log('✅ Set general channel:', generalChannel._id);
+                }
+            } catch (error) {
+                console.error('Error fetching channels:', error);
+            }
+        };
+        fetchChannels();
+    }, []);
 
-            //leave current room and join. dm room
+    // pull saved dm conversations from local storage
+    useEffect(() => {
+        const savedDMs = localStorage.getItem('recentDMs');
+        if (savedDMs) {
+            try {
+                const parsed = JSON.parse(savedDMs);
+                setRecentDMs(parsed);
+                console.log('📂 Loaded saved DMs:', parsed);
+            } catch (error) {
+                console.error('Error loading DMs:', error);
+            }
+        }
+    }, []);
+
+    // keep dm list synced with local storage
+    useEffect(() => {
+        if (recentDms.length > 0) {
+            localStorage.setItem('recentDMs', JSON.stringify(recentDms));
+        }
+    }, [recentDms]);
+
+    // add a conversation to recent dms or update its timestamp
+    const addToRecentDMs = useCallback((dmInfo) => {
+        setRecentDMs(prev => {
+            const exist = prev.find(dm => dm.userId === dmInfo.userId);
+            if (exist) {
+                return prev.map(dm =>
+                    dm.userId === dmInfo.userId
+                        ? { ...dm, lastActive: new Date().toISOString() }
+                        : dm
+                );
+            }
+            return [...prev, { ...dmInfo, lastActive: new Date().toISOString() }];
+        });
+    }, []);
+
+    // switch to an existing dm conversation
+    const loadExistingDM = useCallback(async (dmInfo, messageId = null) => {
+        console.log('🔄 LOADING EXISTING DM:', dmInfo);
+        
+        try {
+            if (socket && currentRoom) {
+                socket.emit('leaveRoom', currentRoom._id);
+            }
             if (socket) {
-                socket.emit('leaveRoom', currentRoom)
-                socket.emit('joinRoom', dmRoomId)
+                socket.emit('joinRoom', dmInfo.roomId);
+            }
+            setCurrentRoom({ _id: dmInfo.roomId, name: dmInfo.userName });
+            setActiveDM(dmInfo);
+            setScrollToMessageId(messageId);
+            setMessages([]);
+
+            try {
+                const response = await api.get(`/dmmessages/${dmInfo.roomId}`);
+                if (response.data.success) {
+                    setMessages(response.data.data || []);
+                    console.log('📚 Loaded DM messages:', response.data.data.length);
+                }
+            } catch (error) {
+                console.error('Error loading DM messages:', error);
+                setMessages([]);
+            }
+            addToRecentDMs(dmInfo);
+        } catch (error) {
+            console.error('Error loading existing DM:', error);
+        }
+    }, [socket, currentRoom, addToRecentDMs]);
+
+    // start a brand new dm with a user
+    const handleDm = useCallback(async (selectedUser) => {
+        try {
+            console.log('🎯 Starting DM with:', selectedUser);
+            
+            if (!selectedUser || (!selectedUser.id && !selectedUser._id)) {
+                console.error('❌ ERROR: Selected user has no ID');
+                alert('Error: Selected user has no ID');
+                return;
             }
 
-            //update state and clear message for new dm 
-            setCurrentRoom(dmRoomId);
-            setMessages([])
+            // sort user ids so the room id is consistent regardless of who starts the dm
+            const userIds = [user.id, selectedUser.id].sort();
+            const dmRoomId = `dm_${userIds[0]}_${userIds[1]}`;
+            
+            const dmInfo = {
+                userId: selectedUser.id || selectedUser._id,
+                userName: selectedUser.fullname,
+                userEmail: selectedUser.email,
+                roomId: dmRoomId,
+                profilePhoto: selectedUser.profilePhoto
+            };
 
-            //set active dm 
-            setActiveDM({
-                 userId: selectedUser.id || selectedUser._id,
-                 userName: selectedUser.fullname,
-                 userEmail: selectedUser.email,
-                 roomId:dmRoomId
-            })
-            setMessages([])
-            //close modal
+            if (socket && currentRoom) {
+                socket.emit('leaveRoom', currentRoom._id);
+            }
+            
+            if (socket) {
+                socket.emit('joinRoom', dmRoomId);
+            }
+
+            setCurrentRoom({ _id: dmRoomId, name: dmInfo.userName });
+            setMessages([]);
+            setActiveDM(dmInfo);
+            addToRecentDMs(dmInfo);
+            
+            try {
+                const response = await api.get(`/dmmessages/${dmRoomId}`);
+                if (response.data.success) {
+                    setMessages(response.data.data || []);
+                }
+            } catch (error) {
+                setMessages([]);
+            }
+            
             setShowUserSearch(false);
-            console.log('DM started successfully')
         } catch (error) {
-            console.error('Error startimg DM:', error)
+            console.error('❌ Error starting DM:', error);
         }
-    }
+    }, [user, socket, currentRoom, addToRecentDMs]);
 
-    // Check authentication and load user data
+    // make sure user is logged in, otherwise redirect to login page
     useEffect(() => {
         const token = localStorage.getItem('token');
         const storedUser = localStorage.getItem('user');
@@ -69,306 +183,222 @@ const Dashboard = () => {
 
         try {
             const parsedUser = JSON.parse(storedUser);
-
-            // Validate user data
             if (!parsedUser.id || !parsedUser.email) {
                 throw new Error('Invalid user data');
             }
-
             setUser(parsedUser);
-
-            // Load previous messages for the room 
-            const fetchMessages = async () => {
-                try {
-                    let response;
-                
-                    if (activeDM) {
-                        //fetch DM messages
-                        response = await api.get(`/dmmessages/${activeDM.roomId}`);
-                    
-                    }else {
-
-                        //Fetch channeel message
-                        response = await api.get(`/messages/${currentRoom}`);
-
-                    }
-
-                    if (response.data.success) {
-                        setMessages(response.data.data || []);
-                    }
-                } catch (error) {
-                    console.error('Error fetching messages:', error);
-                } finally {
-                    setLoading(false);
-                }
-            };
-            
-            fetchMessages();
-           
+            setLoading(false);
         } catch (error) {
             console.error('Error loading user data:', error);
             localStorage.removeItem('token');
             localStorage.removeItem('user');
             navigate('/login');
         }
-    }, [navigate, currentRoom]);
-     
-    // Join room and set up socket listeners
+    }, [navigate]);
+
+    // load messages whenever the current room changes
     useEffect(() => {
-        if (!socket || !isConnected || !user) return;
-        
-        console.log('Joining room:', currentRoom);
-        socket.emit('joinRoom', currentRoom);
-
-        // Fetch messages when joining a room 
-        const fetchRoomMessages = async () => {
+        const fetchMessages = async () => {
+            if (!currentRoom) return;
+            
             try {
-                 let response
-
-                 if (activeDM) {
-                    // Fetch DM messages
-                    console.log('Fetching DM messages for:', activeDM.roomId);
+                let response;
+                
+                if (activeDM) {
                     response = await api.get(`/dmmessages/${activeDM.roomId}`);
-                 } else {
+                } else {
+                    response = await api.get(`/messages/${currentRoom._id}`);
+                }
 
-                    //fetch channel messages
-                    response  = await api.get(`/messages/${currentRoom}`);
-
-                 }
-                 if (response.data.success) {
+                if (response.data.success) {
                     setMessages(response.data.data || []);
+                } else {
+                    setMessages([]);
                 }
             } catch (error) {
-                console.error('Error fetching room messages:', error);
+                console.error('❌ Error fetching messages:', error);
+                setMessages([]);
             }
         };
 
-        fetchRoomMessages();
+        fetchMessages();
+    }, [currentRoom, activeDM]);
 
-        // Listen for new messages 
+    // listen for incoming messages through socket
+    useEffect(() => {
+        if (!socket || !isConnected || !user || !currentRoom) return;
+
+        socket.emit('joinRoom', currentRoom._id);
+
+        socket.on('roomJoined', (roomId) => {
+            console.log('✅ Successfully joined room:', roomId);
+        });
+
+        socket.on('roomParticipants', (data) => {
+            console.log('👥 Room participants:', data);
+        });
+
         const handleNewMessage = (newMessage) => {
-            console.log('=== DEBUG: New Message ===');
-            console.log('Full message:', newMessage);
-            console.log('Sender value:', newMessage.sender);
-            console.log('Sender type:', typeof newMessage.sender);
-            console.log('Current user id:', user?.id);
-            console.log('==========================');
-
-            // Determine who the sender is
-            let senderInfo;
+            const senderId = newMessage.sender?._id || newMessage.sender?.id || newMessage.sender;
+            const isOwnMessage = senderId === user.id;
             
-            // Case 1: Sender is just a string ID (from other users)
-            if (typeof newMessage.sender === 'string') {
-                console.log('Sender is a string ID:', newMessage.sender);
-                
-                // Check if it's the current user
-                if (newMessage.sender === user.id) {
-                    senderInfo = {
-                        id: user.id,
-                        fullname: 'You',
-                        profilePhoto: user.profilePhoto || null
-                    };
-                } else {
-                    // It's another user - we need their info
-                    // For now, use placeholder until we fetch real data
-                    senderInfo = {
-                        id: newMessage.sender,
-                        fullname: 'User',
-                        profilePhoto: null
-                    };
-                }
-            }
-            // Case 2: Sender is an object but might be missing info
-            else if (typeof newMessage.sender === 'object' && newMessage.sender !== null) {
-                console.log('Sender is an object:', newMessage.sender);
-                
-                // Check if it's the current user
-                if (newMessage.sender.id === user.id) {
-                    senderInfo = {
-                        ...newMessage.sender,
-                        fullname: 'You'
-                    };
-                } else {
-                    senderInfo = newMessage.sender;
-                }
-            }
-            // Case 3: No sender info at all
-            else {
-                console.log('No sender info, using current user');
-                senderInfo = {
-                    id: user.id,
-                    fullname: 'You',
-                    profilePhoto: user.profilePhoto || null
-                };
+            let shouldAddMessage = false;
+            
+            if (activeDM && newMessage.isDM && newMessage.dmRoomId === activeDM.roomId) {
+                shouldAddMessage = true;
+            } 
+            else if (!activeDM && !newMessage.isDM && 
+                    (newMessage.room === currentRoom?._id || 
+                        newMessage.chatRoom === currentRoom?._id)) {
+                shouldAddMessage = true;
             }
             
-            // Format the message properly
+            if (!shouldAddMessage) return;
+            
             const formattedMessage = {
                 ...newMessage,
-                sender: senderInfo,
-                createdAt: newMessage.createdAt || newMessage.timestamp || new Date().toISOString(),
-                formattedTime: newMessage.createdAt ?
-                    new Date(newMessage.createdAt).toLocaleTimeString([], {
-                        hour: '2-digit',
-                        minute: '2-digit'
-                    }) : 'Just now'
+                file: newMessage.file || null,
+                sender: typeof newMessage.sender === 'object' ? newMessage.sender : {
+                    _id: newMessage.sender,
+                    fullname: 'User',
+                    profilePhoto: null
+                },
+                createdAt: newMessage.createdAt || new Date().toISOString(),
             };
             
-            console.log('Formatted message:', formattedMessage);
-            
+            // replace temp message with real one if this is confirming a sent message
             setMessages(prev => {
-                // Prevent duplicates
-                const exists = prev.find(m => 
-                    m._id === formattedMessage._id || 
-                    (m.createdAt === formattedMessage.createdAt && 
-                     m.sender?.id === formattedMessage.sender?.id)
-                );
+                if (newMessage.tempId) {
+                    const exists = prev.find(m => m.tempId === newMessage.tempId);
+                    if (exists) {
+                        return prev.map(m => 
+                            m.tempId === newMessage.tempId ? formattedMessage : m
+                        );
+                    }
+                }
+                
+                const exists = prev.find(m => m._id === formattedMessage._id);
                 if (exists) return prev;
                 return [...prev, formattedMessage];
             });
+
+            if (!isOwnMessage) {
+                socket.emit("message-delivered", {
+                    messageId: newMessage._id,
+                    senderId: senderId
+                });
+            }
         };
-        
+
         socket.on('newMessage', handleNewMessage);
-        
-        // Clean up
+
         return () => {
-            
             socket.off('newMessage', handleNewMessage);
-            socket.emit('leaveRoom', currentRoom);
+            socket.off('roomJoined');
+            socket.off('roomParticipants');
+            if (currentRoom) {
+                socket.emit('leaveRoom', currentRoom._id);
+            }
         };
-    }, [socket, isConnected, currentRoom, user]);
+    }, [socket, isConnected, currentRoom, user, activeDM]);
 
-    // Change chat room
-    const handleRoomChange = (roomId) => {
-        if (socket && currentRoom !== roomId) {
-            socket.emit('leaveRoom', currentRoom);
-            setCurrentRoom(roomId);
-            setMessages([]); // Clear messages for new room
-        }
-    };
-
-    // Send Message 
-const handleSendMessage = async (messageContent) => {
-    if (!socket || !messageContent.trim() || !user) return;
-
-    console.log('🚀 SENDING MESSAGE DEBUG:', {
-            room: currentRoom,
-            content: messageContent,
-            isDM: !!activeDM,
-            activeDM: activeDM,
-            messagesBefore: messages.length
-        });
-
-    try {
-        const token = localStorage.getItem("token");
+    // send a message (supports both text and file attachments)
+    const handleSendMessage = useCallback((messageContent, fileAttachment = null) => {
+        if (!socket || !user || !currentRoom) return;
         
-        if (!token) {
-            console.error("No token found in local storage");
-            navigate('/login');
-            return;
-        }
-        
-        // Create message object for immediate UI update
+        // nothing to send
+        if (!messageContent?.trim() && !fileAttachment) return;
+
+        const tempId = `temp-${Date.now()}`;
+
         const tempMessage = {
-            _id: `temp-${Date.now()}`,
-            content: messageContent.trim(),
+            _id: tempId,
+            content: messageContent || (fileAttachment ? `📎 ${fileAttachment.originalName}` : ''),
+            file: fileAttachment ? {
+                _id: fileAttachment._id,
+                originalName: fileAttachment.originalName,
+                mimeType: fileAttachment.mimeType,
+                size: fileAttachment.size,
+                url: fileAttachment.url
+            } : null,
             sender: {
                 id: user.id,
-                fullname: user.fullname || 'You',
+                _id: user.id,
+                fullname: 'You',
                 profilePhoto: user.profilePhoto || null
             },
-            room: currentRoom,
+            room: currentRoom._id,
             createdAt: new Date().toISOString(),
-            formattedTime: new Date().toLocaleTimeString([], { 
-                hour: '2-digit', 
-                minute: '2-digit' 
-            }),
             isTemp: true,
-            isDm: !!activeDM,
-            dmRoomId: activeDM?.roomId
-
+            isDM: !!activeDM,
+            dmRoomId: activeDM?.roomId,
+            tempId: tempId
         };
-                
-        // Update UI immediately
+
+        // show message immediately while it sends
         setMessages(prev => [...prev, tempMessage]);
-        
-        //decidde which endpoint to use the message dm or chanel 
-        let savedMessage;
 
-        if (activeDM) {
-
-            console.log('Sending DM to endpoint:', `/dmmessages/${activeDM.roomId}`);
-            const res = await api.post(`/dmmessages/${activeDM.roomId}`,
-        {
-            content:messageContent.trim()
+        socket.emit("sendMessage", {
+            content: messageContent || (fileAttachment ? `📎 ${fileAttachment.originalName}` : ''),
+            fileId: fileAttachment?._id || null,
+            sender: user.id,
+            room: activeDM ? activeDM.roomId : currentRoom._id,
+            chatRoom: activeDM ? null : currentRoom._id,
+            isDM: !!activeDM,
+            dmRoomId: activeDM?.roomId,
+            dmParticipants: activeDM ? [user.id, activeDM.userId] : undefined,
+            createdAt: new Date().toISOString(),
+            tempId: tempId
         });
-        // Save to database
-        savedMessage = res.data.data;
-        console.log('DM SAVED:', savedMessage);
-    } else {
+    }, [socket, user, currentRoom, activeDM]);
 
-        //send the message to channel
-        console.log('sending channel message to endpoint',`/messages/${currentRoom}`)
-        const res = await api.post(`/messages/${currentRoom}`, {
-                content: messageContent.trim()
+    // switch to a different channel
+    const handleRoomChange = useCallback((room, messageId = null) => {
+        if (!socket) return;
+        
+        if (currentRoom?._id !== room._id) {
+            socket.emit('leaveRoom', currentRoom?._id);
+        }
+
+        socket.emit('joinRoom', room._id);
+
+        setCurrentRoom(room);
+        setActiveDM(null);
+        setMessages([]);
+        setScrollToMessageId(messageId);
+
+        api.get(`/messages/${room._id}`)
+            .then(res => {
+                if (res.data.success) {
+                    setMessages(res.data.data || []);
+                }
+            })
+            .catch(err => {
+                console.error('❌ Failed to load messages:', err);
             });
-            savedMessage = res.data.data;
-            console.log('✅ CHANNEL MESSAGE SAVED:', savedMessage);
-        }
-       
-        // ✅ DEBUG: Check what backend returns
-        // console.log('🔍 BACKEND RESPONSE:', res.data);
-        //const savedMessage = res.data.data;
-        //console.log('🔍 SAVED MESSAGE FROM BACKEND:', savedMessage);
-        //console.log('🔍 SENDER OBJECT:', savedMessage.sender);
-        //console.log('🔍 HAS FULLNAME?', savedMessage.sender?.fullname);
-        //console.log('🔍 SENDER TYPE:', typeof savedMessage.sender);
-        
-        // Update the temp message with the saved message
-        setMessages(prev => prev.map(msg => 
-            msg._id === tempMessage._id ? {
-                ...savedMessage,
-                sender: savedMessage.sender || tempMessage.sender,
-                formattedTime: savedMessage.createdAt ? 
-                    new Date(savedMessage.createdAt).toLocaleTimeString([], { 
-                        hour: '2-digit', 
-                        minute: '2-digit' 
-                    }) : 'Just now',
-                    isDM: !!activeDM
-            } : msg
-        ));
-        
-        // Emit to other users
-        const emitRoom = activeDM ? activeDM.roomId : currentRoom;
-        console.log('📤 Emitting to socket:', emitRoom);
+    }, [socket, currentRoom]);
 
-        const socketMessage = {
-            ...savedMessage,
-            room: emitRoom, 
-            isDM: !!activeDM
-        };
-        socket.emit("sendMessage", socketMessage);
-        
-    } catch (error) {
-        console.error("Message not saved:", error);
-        
-        // Remove temp message if save failed
-        setMessages(prev => prev.filter(msg => !msg.isTemp));
-        
-        if (error.response?.status === 401 || 
-            error.response?.status === 400 || 
-            (error.response?.data?.message && 
-             error.response.data.message.includes('token'))) {
+    // exit dm and go back to the general channel
+    const handleExitDM = useCallback(() => {
+        const generalChannel = channels.find(ch => ch.name === 'general');
+        if (generalChannel && socket) {
+            if (currentRoom) {
+                socket.emit('leaveRoom', currentRoom._id);
+                socket.emit('joinRoom', generalChannel._id);
+            }
+            setCurrentRoom(generalChannel);
+            setActiveDM(null);
             
-            localStorage.removeItem('token');
-            localStorage.removeItem('user');
-            navigate('/login');
+            api.get(`/messages/${generalChannel._id}`).then(response => {
+                if (response.data.success) {
+                    setMessages(response.data.data || []);
+                }
+            });
         }
-    }
-};
-    
-    // Show loading state
-    if (loading || !user) {
+    }, [channels, socket, currentRoom]);
+
+    // show loading spinner while initial data is being fetched
+    if (loading || !user || !currentRoom) {
         return (
             <div className="h-screen flex items-center justify-center bg-gray-900">
                 <div className="text-white">Loading...</div>
@@ -378,66 +408,56 @@ const handleSendMessage = async (messageContent) => {
 
     return (
         <div className="h-screen flex flex-col bg-gray-900">
-            {/* Top Navbar */}
-            <TopNavbar user={user}
-                onSearchClick={() => setShowUserSearch(true)}/>
+            <TopNavbar
+                user={user}
+                users={users}
+                messages={messages}
+                recentDMs={recentDms}
+                onSearchClick={() => setShowUserSearch(true)}
+                onSelectDM={loadExistingDM}
+                onSelectUser={handleDm}
+                onSelectChannel={handleRoomChange}
+            />
 
-                {/*user search modal */}
             <UserSearchModal
                 isOpen={showUserSearch}
-                onClose={ () =>setShowUserSearch(false)}
+                onClose={() => setShowUserSearch(false)}
                 currentUser={user}
                 onSelectUser={handleDm}
-                />
+            />
 
-            {/* Main container takes remaining space */}
             <div className="flex flex-1 overflow-hidden">
-                {/* Left sidebar */}
-                <SideNavBar 
+                <SideNavBar
                     onRoomChange={handleRoomChange}
                     currentRoom={currentRoom}
                     onNewChatClick={() => setShowUserSearch(true)}
                     className='hidden md:flex md:w-16 lg:w-64'
-                />
-
-                {/* Main chat area */}
-                <MiddleChatarea 
-                    messages={messages} 
-                    onSendMessage={handleSendMessage} 
-                    currentRoom={currentRoom} 
+                    recentDMs={recentDms}
+                    onLoadDM={loadExistingDM}
+                    messages={messages}
                     currentUser={user} 
-                    activeDm={activeDM}
-                    className='flex-1'
-
-                     onExitDM={() => {
-                     // Exit DM logic
-                        if (socket) {
-                            socket.emit('leaveRoom', currentRoom);
-                            socket.emit('joinRoom', 'general');
-                        }
-                        setCurrentRoom('general');
-                        setActiveDM(null);
-
-                        // Load general messages
-                        api.get('/messages/general').then(response => {
-                            if (response.data.success) {
-                                setMessages(response.data.data || []);
-                            }
-                        });
-                    }}
-
-
                 />
 
-                {/* Right Side Bar */}
-                <ProfileSidebar 
+                <MiddleChatarea
+                    messages={messages}
+                    onSendMessage={handleSendMessage}
                     currentRoom={currentRoom}
-                    user={user} 
+                    currentUser={user}
+                    activeDm={activeDM}
+                    scrollToMessageId={scrollToMessageId}
+                    className='flex-1'
+                    onExitDM={handleExitDM}
+                    isDarkMode={isDarkMode} 
+                />
+
+                <ProfileSidebar
+                    currentRoom={currentRoom}
+                    user={user}
                     className="hidden md:flex md:w-16 lg:w-64"
                 />
             </div>
-           
         </div>
     );
 };
+
 export default Dashboard;

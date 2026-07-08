@@ -1,1 +1,179 @@
 @import "tailwindcss";
+
+/* custom color palette and animations */
+@theme {
+  --font-sans: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+  
+  --color-purple-50: #f5f3ff;
+  --color-purple-100: #ede9fe;
+  --color-purple-200: #ddd6fe;
+  --color-purple-300: #c4b5fd;
+  --color-purple-400: #a78bfa;
+  --color-purple-500: #8b5cf6;
+  --color-purple-600: #7c3aed;
+  --color-purple-700: #6d28d9;
+  --color-purple-800: #5b21b6;
+  --color-purple-900: #4c1d95;
+  
+  --color-indigo-50: #eef2ff;
+  --color-indigo-100: #e0e7ff;
+  --color-indigo-200: #c7d2fe;
+  --color-indigo-300: #a5b4fc;
+  --color-indigo-400: #818cf8;
+  --color-indigo-500: #6366f1;
+  --color-indigo-600: #4f46e5;
+  --color-indigo-700: #4338ca;
+  --color-indigo-800: #3730a3;
+  --color-indigo-900: #312e81;
+  
+  --animate-bounce-slow: bounce 2s infinite;
+  --animate-pulse-ring: pulseRing 1.5s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+  --animate-shake: shake 0.5s ease-in-out;
+}
+
+/* pulsing ring animation for incoming calls */
+@keyframes pulseRing {
+  0% { transform: scale(0.8); opacity: 0.5; }
+  100% { transform: scale(1.2); opacity: 0; }
+}
+
+/* shake animation for error states */
+@keyframes shake {
+  0%, 100% { transform: translateX(0); }
+  25% { transform: translateX(-5px); }
+  75% { transform: translateX(5px); }
+}
+
+@layer base {
+  body {
+    font-family: var(--font-sans);
+    background-color: #f9fafb;
+  }
+}
+
+@layer components {
+  /* chat bubbles - my messages vs other people's */
+  .message-own {
+    @apply bg-gradient-to-r from-purple-500 to-indigo-400 text-white rounded-2xl rounded-tr-md px-4 py-2 max-w-[70%] shadow-sm;
+  }
+  
+  .message-other {
+    @apply bg-gray-100 text-gray-800 rounded-2xl rounded-tl-md px-4 py-2 max-w-[70%] shadow-sm;
+  }
+  
+  /* date separators between messages */
+  .date-separator {
+    @apply relative text-center my-6;
+  }
+  
+  .date-separator span {
+    @apply bg-gray-50 px-4 text-xs font-medium text-gray-400 relative z-10;
+  }
+  
+  .date-separator::before {
+    content: '';
+    @apply absolute top-1/2 left-0 right-0 h-px bg-gray-200 -translate-y-1/2;
+  }
+  
+  /* sidebar items with hover effects */
+  .sidebar-item {
+    @apply flex items-center gap-3 px-3 py-2 rounded-xl transition-all duration-200 cursor-pointer;
+  }
+  
+  .sidebar-item:hover {
+    @apply bg-purple-50 text-purple-700 translate-x-1;
+  }
+  
+  .sidebar-item.active {
+    @apply bg-gradient-to-r from-purple-600 to-indigo-600 text-white shadow-md;
+  }
+  
+  /* message input field styling */
+  .message-input {
+    @apply flex-1 border border-gray-200 rounded-2xl px-5 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent bg-gray-50 hover:bg-white transition-all duration-200;
+  }
+  
+  .send-button {
+    @apply bg-gradient-to-r from-purple-600 to-indigo-600 text-white p-3 rounded-2xl hover:shadow-lg hover:scale-105 transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed;
+  }
+  
+  /* call interface buttons */
+  .call-button {
+    @apply text-gray-400 hover:text-purple-600 hover:bg-purple-50 p-2 rounded-xl transition-all duration-200;
+  }
+  
+  .call-button.active {
+    @apply bg-purple-600 text-white;
+  }
+  
+  /* online/offline status dots */
+  .online-dot {
+    @apply w-3 h-3 bg-green-500 rounded-full ring-2 ring-white;
+  }
+  
+  .offline-dot {
+    @apply w-3 h-3 bg-gray-400 rounded-full ring-2 ring-white;
+  }
+  
+  /* typing indicator with bouncing dots */
+  .typing-indicator {
+    @apply flex items-center gap-1 px-4 py-2 bg-gray-100 rounded-full w-fit;
+  }
+  
+  .typing-indicator span {
+    @apply w-2 h-2 bg-gray-400 rounded-full animate-bounce;
+  }
+  
+  .typing-indicator span:nth-child(1) {
+    animation-delay: 0s;
+  }
+  
+  .typing-indicator span:nth-child(2) {
+    animation-delay: 0.2s;
+  }
+  
+  .typing-indicator span:nth-child(3) {
+    animation-delay: 0.4s;
+  }
+  
+  /* unread message badge */
+  .unread-badge {
+    @apply bg-red-500 text-white text-xs font-medium px-2 py-0.5 rounded-full min-w-[20px] text-center;
+  }
+}
+
+@layer utilities {
+  /* gradient backgrounds used across the app */
+  .bg-gradient-primary {
+    background: linear-gradient(135deg, #6366f1 0%, #8b5cf6 50%, #a855f7 100%);
+  }
+  
+  /* text with gradient fill */
+  .text-gradient {
+    background: linear-gradient(135deg, #6366f1, #8b5cf6);
+    -webkit-background-clip: text;
+    background-clip: text;
+    color: transparent;
+  }
+  
+  /* glassmorphism effect for modals */
+  .glass {
+    background: rgba(255, 255, 255, 0.8);
+    backdrop-filter: blur(10px);
+  }
+  
+  /* soft shadow for cards */
+  .shadow-elegant {
+    box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.05), 0 8px 10px -6px rgba(0, 0, 0, 0.02);
+  }
+}
+
+/* hide scrollbar but keep functionality (useful for sidebars) */
+.hide-scrollbar {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
+
+.hide-scrollbar::-webkit-scrollbar {
+  display: none;
+}

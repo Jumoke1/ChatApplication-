@@ -137,16 +137,36 @@ export const authAPI = {
 };
 
 export const messageAPI = {
-    getMessages: (room) => api.get(`/messages/${room}`),
-    sendMessage: (room, messageData) => api.post(`/messages/${room}`, messageData),
-    getMessageCount: (room) => api.get(`/messages/count/${room}`),
+    sendMessage: (roomId, messageData) => api.post(`/messages/${roomId}`, messageData),
 };
-
 export const userAPI = {
     getProfile: () => api.get('/users/profile'),
     updateProfile: (data) => api.put('/users/profile', data),
     getOnlineUsers: () => api.get('/users/online'),
 };
 
+export const dmAPI = {
+    getMessages: (dmRoomId) => api.get(`/dmmessages/${dmRoomId}`),
+    sendMessage: (dmRoomId, content) => api.post(`/dmmessages/${dmRoomId}`, { content }),
+    getCount: (dmRoomId) => api.get(`/dmmessages/count/${dmRoomId}`),
+    getUnreadCount: () => api.get('/dmmessages/unread/count'),
+    getUnreadDetails: () => api.get('/dmmessages/unread/details'),
+    markAsRead: (dmRoomId) => api.post(`/dmmessages/${dmRoomId}/read`),  
+    markAllAsRead: () => api.post('/dmmessages/read-all'),  
+};
+
+
+export const channelAPI = {
+    getMessages: (channelId) => api.get(`/messages/${channelId}`),
+    sendMessage: (channelId, content) => api.post(`/messages/${channelId}`, { content }),
+    getCount: (channelId) => api.get(`/messages/count/${channelId}`),
+
+
+    getUnreadCount: () => api.get('/messages/unread/count'),
+    getUnreadDetails: () => api.get('/messages/unread/details'),
+    markAsRead: (channelId) => api.post(`/messages/${channelId}/read`),
+    markAllAsRead: () => api.post('/messages/read-all'),
+
+}
 
 export default api;
