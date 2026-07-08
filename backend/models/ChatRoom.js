@@ -1,34 +1,46 @@
-const mongoose = require('mongoose')
+const mongoose = require('mongoose');
+
 const chatRoomSchema = new mongoose.Schema({
     name: {
-        type:String, 
-        required: true,
+        type: String,
+        required: [true, 'Chat room name is required'],
+        unique: true,
         trim: true,
-        maxlength: 50
+        minlength: [2, 'Room name must be at least 2 characters'],
+        maxlength: [50, 'Room name cannot exceed 50 characters']
     },
-    participants:[{
-        type: mongoose.Schema.Types.ObjectId,
-        ref:'User',
-    }],     
     description: {
         type: String,
-        trim: true,
-        maxlength:200
+        maxlength: [200, 'Description cannot exceed 200 characters'],
+        default: ''
     },
     createdBy: {
         type: mongoose.Schema.Types.ObjectId,
         ref: 'User',
         required: true
     },
-    admins: [{ 
+    participants: [{
         type: mongoose.Schema.Types.ObjectId,
-        ref: 'User',
+        ref: 'User'
     }],
-    isPublic: {
+    isPrivate: {
         type: Boolean,
-        default: true
+        default: false
     },
-}, {timestamps:true    
-})
+    createdAt: {
+        type: Date,
+        default: Date.now
+    },
+    updatedAt: {
+        type: Date,
+        default: Date.now
+    }
+}, {
+    timestamps: true
+});
+
+// Indexes for faster queries
+chatRoomSchema.index({ name: 1 });
+chatRoomSchema.index({ participants: 1 });
 
 module.exports = mongoose.model('ChatRoom', chatRoomSchema);

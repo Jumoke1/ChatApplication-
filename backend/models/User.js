@@ -1,44 +1,75 @@
-const mongoose = require('mongoose')
+const mongoose = require('mongoose');
+const bcrypt = require('bcryptjs');
 
-const userSchema = new mongoose.Schema({
+const UserSchema = new mongoose.Schema({
     fullname: {
         type: String,
         required: true,
-        trim: true,
-        minlength:3,
-        maxlength:30
+        trim: true
     },
-    email:{
-        type:String, 
-        required:true,
-        unique:true,
-        trim:true,
-        lowercase:true
-    },
-    password:{
+
+    email: {
         type: String,
         required: true,
-        minlength: 6
+        unique: true,
+        lowercase: true,
+        trim: true
+    },
+
+    password: {
+        type: String,
+        required: true
+    },
+
+    profilePhoto: {
+        type: String,
+        default: null
     },
 
     online: {
         type: Boolean,
-        default: false 
+        default: false
     },
 
     lastSeen: {
         type: Date,
         default: Date.now
+    }
 
-    }, 
-    profilePhoto: {
-    type: String,
-    default: ""
-    },
+}, {
+    timestamps: true
+});
 
-}, { 
-  timestamps: true  //  Automatically adds:
-                    // createdAt: when user registered
-                    // updatedAt: when user last updated
-})
-module.exports = mongoose.model('User', userSchema);
+
+// HASH PASSWORD BEFORE SAVING
+UserSchema.pre('save', async function(next) {
+
+    // only hash if password changed
+    if (!this.isModified('password')) {
+        return next();
+    }
+
+    try {
+
+        const salt = await bcrypt.genSalt(10);
+
+        this.password = await bcrypt.hash(this.password, salt);
+
+        next();
+
+    } catch (error) {
+        next(error);
+    }
+});
+
+
+// COMPARE PASSWORD METHOD
+UserSchema.methods.comparePassword = async function(enteredPassword) {
+
+    return await bcrypt.compare(
+        enteredPassword,
+        this.password
+    );
+};
+
+module.exports = mongoose.model('User', UserSchema);
