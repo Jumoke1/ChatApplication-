@@ -15,6 +15,7 @@ const Signup = () => {
   const [error, setError] = useState("");
   const { setUser } = useAuth();
   const navigate = useNavigate();
+    const API_BASE = import.meta.env.VITE_API_URL || "http://localhost:5001";
 
   const handleChange = (e) => {
     setFormData({
@@ -34,8 +35,9 @@ const Signup = () => {
       }
 
       const url = activeTab === 'signup'
-        ? "http://localhost:5001/api/auth/register"
-        : "http://localhost:5001/api/auth/login";
+       ? `${API_BASE}/api/auth/register`   
+        : `${API_BASE}/api/auth/login`;       
+
 
       const bodyData = activeTab === 'signup'
         ? formData

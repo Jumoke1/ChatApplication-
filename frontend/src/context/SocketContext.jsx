@@ -9,6 +9,9 @@ export const SocketProvider = ({ children }) => {
   const [isConnected, setIsConnected] = useState(false);
   const socketRef = useRef(null);
 
+    // Use environment variable for socket server URL
+  const SOCKET_URL = import.meta.env.VITE_API_URL || "http://localhost:5001";
+
   // pull user id out of the jwt token
   const getUserIdFromToken = (token) => {
     if (!token) return null;
@@ -30,7 +33,7 @@ export const SocketProvider = ({ children }) => {
     const userId = getUserIdFromToken(token);
     console.log('🔌 Connecting socket with userId:', userId);
 
-    const newSocket = io("http://localhost:5001", {
+    const newSocket = io(SOCKET_URL, {
       auth: { userId },
       transports: ['websocket', 'polling'],
       autoConnect: true,
