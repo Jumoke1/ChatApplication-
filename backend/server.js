@@ -16,9 +16,8 @@ app.use(express.urlencoded({ extended: true }));
 app.use("/uploads", express.static("uploads"));
 
 // connect to mongodb
-mongoose.connect('mongodb://localhost:27017/chat-app')
-    .then(() => console.log('MongoDB Connected'))
-    .catch(err => console.error('MongoDB Error:', err));
+const MONGODB_URI = process.env.MONGODB_URI || 'mongodb://localhost:27017/chat-app';
+
 
 // socket.io configuration
 const io = socketIo(server, {
