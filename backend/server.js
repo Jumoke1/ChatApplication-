@@ -1,5 +1,6 @@
+// ─── Load environment variables FIRST ──────────────────────
+require('dotenv').config();
 
-require('dotenv').config();  
 const express = require('express');
 const cors = require('cors');
 const http = require('http');
@@ -11,29 +12,52 @@ const app = express();
 const server = http.createServer(app);
 const PORT = process.env.PORT || 5001;
 
+// ─── 🔍 DEBUG: Check environment variables ──────────────────
+console.log('═══════════════════════════════════════════════════');
+console.log('🔍 ENVIRONMENT VARIABLES CHECK:');
+console.log('───────────────────────────────────────────────────');
+console.log(`📌 PORT: ${process.env.PORT || '❌ NOT SET (using default 5001)'}`);
+console.log(`📌 MONGODB_URI: ${process.env.MONGODB_URI ? '✅ SET' : '❌ NOT SET'}`);
+console.log(`📌 JWT_SECRET: ${process.env.JWT_SECRET ? '✅ SET' : '❌ NOT SET'}`);
+console.log('───────────────────────────────────────────────────');
+
+// ─── Show the actual MONGODB_URI being used ─────────────────
+const MONGODB_URI = process.env.MONGODB_URI || 'mongodb://localhost:27017/chat-app';
+console.log(`📌 Using MONGODB_URI: ${MONGODB_URI}`);
+console.log('═══════════════════════════════════════════════════');
+
 // basic middleware setup
 app.use(cors());
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 app.use("/uploads", express.static("uploads"));
 
-//  MongoDB Connection 
-const MONGODB_URI = process.env.MONGODB_URI || 'mongodb://localhost:27017/chat-app';
+// ─── ✅ MongoDB Connection ──────────────────────────────────
+console.log('🔄 Connecting to MongoDB...');
 
 mongoose.connect(MONGODB_URI, {
     useNewUrlParser: true,
-    useUnifiedTopology: true
+    useUnifiedTopology: true,
+    serverSelectionTimeoutMS: 5000, // Timeout after 5s instead of 30s
+    socketTimeoutMS: 45000,
 })
-.then(() => console.log('✅ MongoDB Connected Successfully'))
+.then(() => {
+    console.log('✅ MongoDB Connected Successfully');
+    console.log(`📌 Database: ${mongoose.connection.name}`);
+    console.log(`📌 Host: ${mongoose.connection.host}`);
+})
 .catch(err => {
-    console.error('❌ MongoDB Connection Error:', err);
+    console.error('❌ MongoDB Connection Error:');
+    console.error('   Error Name:', err.name);
+    console.error('   Error Message:', err.message);
+    console.error('   Full Error:', err);
     process.exit(1);
 });
 
-//  Socket.io Configuration 
+// ─── Socket.io Configuration ──────────────────────────────
 const io = socketIo(server, {
     cors: {
-        origin: ["http://localhost:5174", "http://localhost:5173"],
+        origin: ["http://localhost:5174", "http://localhost:5173", "https://your-frontend-url.onrender.com"],
         methods: ["GET", "POST"],
         credentials: true,
         allowedHeaders: ["my-custom-header"]
@@ -288,7 +312,7 @@ io.on('connection', (socket) => {
     });
 });
 
-// API Routes 
+// ─── API Routes ──────────────────────────────────────────────
 const auth = require('./middleware/auth');
 const authRoutes = require('./routes/auth');
 const chatRoomRoutes = require('./routes/chatRooms');
@@ -317,8 +341,11 @@ app.get('/api/protected', auth, (req, res) => {
     res.json({ message: 'You accessed a protected route', user: req.user });
 });
 
-// Start Server
+// ─── Start Server ──────────────────────────────────────────────
 server.listen(PORT, () => {
+    console.log('═══════════════════════════════════════════════════');
     console.log(`🚀 Server running on port ${PORT}`);
     console.log(`📍 Test: http://localhost:${PORT}/api/test`);
+    console.log(`🌐 Live URL: https://chatapplication-d2k9.onrender.com`);
+    console.log('═══════════════════════════════════════════════════');
 });
