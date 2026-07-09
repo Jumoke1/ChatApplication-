@@ -22,7 +22,7 @@ mongoose.connect(MONGODB_URI, {
     useNewUrlParser: true,
     useUnifiedTopology: true
 })
-.then(() => console.log(' MongoDB Connected Successfully'))
+.then(() => console.log('✅ MongoDB Connected Successfully'))
 .catch(err => {
     console.error('❌ MongoDB Connection Error:', err);
     process.exit(1);
@@ -286,7 +286,7 @@ io.on('connection', (socket) => {
     });
 });
 
-// ─── API Routes ──────────────────────────────────────────────
+// API Routes 
 const auth = require('./middleware/auth');
 const authRoutes = require('./routes/auth');
 const chatRoomRoutes = require('./routes/chatRooms');
