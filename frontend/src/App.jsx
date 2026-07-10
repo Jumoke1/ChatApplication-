@@ -4,7 +4,7 @@ import Register from './pages/Register';
 import Dashboard from './pages/Dashboard'
 import TopNavbar from "./components/TopNavbar";
 import SideNavbar from './components/Sidebar/SideNavbar'
-import ProfileSidebar from "./components/Sidebar/profileSidebar";
+import ProfileSidebar from "./components/Sidebar/ProfileSidebar";
 import MiddleChatarea  from "./components/Sidebar/MiddleChatarea"
 
 

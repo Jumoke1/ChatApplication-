@@ -1,6 +1,6 @@
 import TopNavbar from "../components/TopNavbar";
 import SideNavBar from "../components/Sidebar/SideNavbar";
-import ProfileSidebar from "../components/Sidebar/profileSidebar";
+import ProfileSidebar from "../components/Sidebar/ProfileSidebar";
 import { useSocket } from '../context/SocketContext';
 import React, { useEffect, useState, useCallback } from "react";
 import MiddleChatarea from "../components/Sidebar/MiddleChatarea";
