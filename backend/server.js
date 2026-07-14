@@ -12,16 +12,14 @@ const app = express();
 const server = http.createServer(app);
 const PORT = process.env.PORT || 5001;
 
-// ─── 🔍 DEBUG: Check environment variables ──────────────────
-console.log('═══════════════════════════════════════════════════');
-console.log('🔍 ENVIRONMENT VARIABLES CHECK:');
-console.log('───────────────────────────────────────────────────');
-console.log(`📌 PORT: ${process.env.PORT || '❌ NOT SET (using default 5001)'}`);
-console.log(`📌 MONGODB_URI: ${process.env.MONGODB_URI ? '✅ SET' : '❌ NOT SET'}`);
-console.log(`📌 JWT_SECRET: ${process.env.JWT_SECRET ? '✅ SET' : '❌ NOT SET'}`);
-console.log('───────────────────────────────────────────────────');
+//  DEBUG: Check environment variables 
+console.log('ENVIRONMENT VARIABLES CHECK:');
+console.log(` PORT: ${process.env.PORT || '❌ NOT SET (using default 5001)'}`);
+console.log(` MONGODB_URI: ${process.env.MONGODB_URI ? '✅ SET' : '❌ NOT SET'}`);
+console.log(` JWT_SECRET: ${process.env.JWT_SECRET ? '✅ SET' : '❌ NOT SET'}`);
 
-// ─── Show the actual MONGODB_URI being used ─────────────────
+
+//  Show the actual MONGODB_URI being used
 const MONGODB_URI = process.env.MONGODB_URI || 'mongodb://localhost:27017/chat-app';
 console.log(`📌 Using MONGODB_URI: ${MONGODB_URI}`);
 console.log('═══════════════════════════════════════════════════');
@@ -32,7 +30,8 @@ app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 app.use("/uploads", express.static("uploads"));
 
-// ─── ✅ MongoDB Connection ──────────────────────────────────
+
+//  MongoDB Connectio
 console.log('🔄 Connecting to MongoDB...');
 
 mongoose.connect(MONGODB_URI, {
@@ -54,10 +53,10 @@ mongoose.connect(MONGODB_URI, {
     process.exit(1);
 });
 
-// ─── Socket.io Configuration ──────────────────────────────
+// Socket.io Configuration 
 const io = socketIo(server, {
     cors: {
-        origin: ["http://localhost:5174", "http://localhost:5173", "https://your-frontend-url.onrender.com"],
+        origin: ["http://localhost:5174", "http://localhost:5173", "https://flowchat-frontend-ll85.onrender.com", "https://your-frontend-url.onrender.com"],
         methods: ["GET", "POST"],
         credentials: true,
         allowedHeaders: ["my-custom-header"]
