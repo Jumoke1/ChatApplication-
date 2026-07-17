@@ -32,25 +32,58 @@ const Dashboard = () => {
     }, [socket]);
 
     // load all available channels and set "general" as the default
-    useEffect(() => {
-        const fetchChannels = async () => {
-            try {
-                const response = await api.get('/chatrooms');
-                const channelsData = Array.isArray(response.data) ? response.data : 
-                                    response.data.data || [];
-                setChannels(channelsData);
-                
-                const generalChannel = channelsData.find(ch => ch.name === 'general');
-                if (generalChannel) {
-                    setCurrentRoom(generalChannel);
-                    console.log('✅ Set general channel:', generalChannel._id);
-                }
-            } catch (error) {
-                console.error('Error fetching channels:', error);
+        useEffect(() => {
+    const fetchChannels = async () => {
+        try {
+            const response = await api.get('/chatrooms');
+            console.log('📡 Channels response:', response.data);
+            
+            let channelsData = [];
+            if (Array.isArray(response.data)) {
+                channelsData = response.data;
+            } else if (response.data.data && Array.isArray(response.data.data)) {
+                channelsData = response.data.data;
+            } else {
+                console.warn('Unexpected channels format:', response.data);
             }
-        };
-        fetchChannels();
-    }, []);
+
+            setChannels(channelsData);
+            
+            // Find 'general' channel or use the first one
+            let generalChannel = channelsData.find(ch => ch.name === 'general');
+            if (!generalChannel && channelsData.length > 0) {
+                generalChannel = channelsData[0];
+            }
+            
+            if (generalChannel) {
+                setCurrentRoom(generalChannel);
+                console.log('✅ Set current room:', generalChannel.name, generalChannel._id);
+            } else {
+                // 🚨 Fallback: create a temporary channel to avoid infinite loading
+                console.warn('⚠️ No channels found, creating fallback');
+                const fallbackRoom = { _id: 'general', name: 'general' };
+                setChannels([fallbackRoom]);
+                setCurrentRoom(fallbackRoom);
+            }
+        } catch (error) {
+            console.error('❌ Error fetching channels:', error);
+            // Create a fallback channel so the dashboard loads
+            const fallbackRoom = { _id: 'general', name: 'general' };
+            setChannels([fallbackRoom]);
+            setCurrentRoom(fallbackRoom);
+        }
+    };
+    fetchChannels();
+}, []);
+
+    // ✅ Reconnect socket if disconnected (safety net)
+    useEffect(() => {
+    if (!user || !socket) return;
+    if (!socket.connected) {
+        console.log('🔄 Socket disconnected, attempting reconnect...');
+        socket.connect();
+    }
+}, [user, socket]);
 
     // pull saved dm conversations from local storage
     useEffect(() => {
