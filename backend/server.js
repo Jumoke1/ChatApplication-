@@ -1,4 +1,4 @@
-// ─── Load environment variables FIRST ──────────────────────
+// Load environment variables FIRST
 require('dotenv').config();
 
 const express = require('express');
@@ -13,37 +13,33 @@ const server = http.createServer(app);
 const PORT = process.env.PORT || 5001;
 
 //  DEBUG: Check environment variables 
-console.log('ENVIRONMENT VARIABLES CHECK:');
-console.log(` PORT: ${process.env.PORT || '❌ NOT SET (using default 5001)'}`);
-console.log(` MONGODB_URI: ${process.env.MONGODB_URI ? '✅ SET' : '❌ NOT SET'}`);
-console.log(` JWT_SECRET: ${process.env.JWT_SECRET ? '✅ SET' : '❌ NOT SET'}`);
+console.log('═══════════════════════════════════════════════════');
+console.log('🔍 ENVIRONMENT VARIABLES CHECK:');
+console.log('───────────────────────────────────────────────────');
+console.log(`📌 PORT: ${process.env.PORT || '❌ NOT SET (using default 5001)'}`);
+console.log(`📌 MONGODB_URI: ${process.env.MONGODB_URI ? ' SET' : '❌ NOT SET'}`);
+console.log(`📌 JWT_SECRET: ${process.env.JWT_SECRET ? ' SET' : '❌ NOT SET'}`);
+console.log('───────────────────────────────────────────────────');
 
-
-//  Show the actual MONGODB_URI being used
+// Show the actual MONGODB_URI being used 
 const MONGODB_URI = process.env.MONGODB_URI || 'mongodb://localhost:27017/chat-app';
 console.log(`📌 Using MONGODB_URI: ${MONGODB_URI}`);
 console.log('═══════════════════════════════════════════════════');
 
-// basic middleware setup
+//  Basic middleware setup 
 app.use(cors());
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 app.use("/uploads", express.static("uploads"));
 
-
-//  MongoDB Connectio
+//  MongoDB Connection 
 console.log('🔄 Connecting to MongoDB...');
 
-mongoose.connect(MONGODB_URI, {
-    useNewUrlParser: true,
-    useUnifiedTopology: true,
-    serverSelectionTimeoutMS: 5000, // Timeout after 5s instead of 30s
-    socketTimeoutMS: 45000,
-})
+mongoose.connect(MONGODB_URI)
 .then(() => {
-    console.log('✅ MongoDB Connected Successfully');
-    console.log(`📌 Database: ${mongoose.connection.name}`);
-    console.log(`📌 Host: ${mongoose.connection.host}`);
+    console.log(' MongoDB Connected Successfully');
+    console.log(` Database: ${mongoose.connection.name}`);
+    console.log(` Host: ${mongoose.connection.host}`);
 })
 .catch(err => {
     console.error('❌ MongoDB Connection Error:');
@@ -53,10 +49,18 @@ mongoose.connect(MONGODB_URI, {
     process.exit(1);
 });
 
-// Socket.io Configuration 
+//  Socket.io Configuration 
+// Get frontend URL from environment or use fallback
+const FRONTEND_URL = process.env.FRONTEND_URL || 'https://flowchat-frontend-ll85.onrender.com';
+
 const io = socketIo(server, {
     cors: {
-        origin: ["http://localhost:5174", "http://localhost:5173", "https://flowchat-frontend-ll85.onrender.com", "https://your-frontend-url.onrender.com"],
+        origin: [
+            "http://localhost:5173",
+            "http://localhost:5174",
+            FRONTEND_URL,  // ← Uses environment variable or fallback
+            "https://your-frontend-url.onrender.com"  // Remove this if not needed
+        ],
         methods: ["GET", "POST"],
         credentials: true,
         allowedHeaders: ["my-custom-header"]
@@ -311,7 +315,7 @@ io.on('connection', (socket) => {
     });
 });
 
-// ─── API Routes ──────────────────────────────────────────────
+// API Routes 
 const auth = require('./middleware/auth');
 const authRoutes = require('./routes/auth');
 const chatRoomRoutes = require('./routes/chatRooms');
@@ -340,7 +344,7 @@ app.get('/api/protected', auth, (req, res) => {
     res.json({ message: 'You accessed a protected route', user: req.user });
 });
 
-// ─── Start Server ──────────────────────────────────────────────
+// Start Server 
 server.listen(PORT, () => {
     console.log('═══════════════════════════════════════════════════');
     console.log(`🚀 Server running on port ${PORT}`);
