@@ -3,7 +3,11 @@ import { useState, useEffect, useRef } from "react";
 import { dmAPI, channelAPI } from "../api"; 
 
 const TopNavbar = ({user, users, messages, recentDMs, onSelectUser,
-  onSelectDM, onSelectChannel}) => {
+  onSelectDM, onSelectChannel, onToggleSidebar, 
+    onToggleProfile, 
+    showSidebar, 
+    showProfile 
+}) => {
   const [showMobileSearch, setShowMobileSearch] = useState(false);
   const [isMobile, setIsMobile] = useState(false);
   const [query, setQuery] = useState("");

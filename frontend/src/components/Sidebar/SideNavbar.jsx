@@ -26,7 +26,7 @@ const LeftSideBar = ({
     const fetchChatRooms = async () => {
       try {
         const response = await api.get("/chatrooms");
-        console.log('📡 Raw response:', response.data);
+        console.log('Raw response:', response.data);
         
         let channelsData;
         if (Array.isArray(response.data)) {
@@ -38,7 +38,7 @@ const LeftSideBar = ({
           channelsData = [];
         }
         setChannels(channelsData);
-        console.log(`✅ Loaded ${channelsData.length} channels`);
+        console.log(` Loaded ${channelsData.length} channels`);
       } catch (error) {
         console.error("Failed to fetch chat rooms:", error);
         setChannels([]);
@@ -74,9 +74,9 @@ const LeftSideBar = ({
         participants: [currentUser.id]
       };
       
-      console.log('📡 Creating channel:', channelData);
+      console.log(' Creating channel:', channelData);
       const response = await api.post('/chatrooms', channelData);
-      console.log('✅ Create channel response:', response.data);
+      console.log('Create channel response:', response.data);
       
       if (response.data.success || response.data._id) {
         const newChannel = response.data.data || response.data;
@@ -106,7 +106,7 @@ const LeftSideBar = ({
         alert(response.data?.message || "Failed to create channel");
       }
     } catch (error) {
-      console.error("❌ Failed to create channel:", error);
+      console.error(" Failed to create channel:", error);
       alert(error.response?.data?.message || "Failed to create channel");
     }
   };
@@ -140,6 +140,13 @@ const LeftSideBar = ({
       <aside className="w-80 h-screen bg-[#f8fafb] border-r border-gray-200 flex flex-col">
         {/* top action buttons - new chat and browse */}
         <div className="p-4 flex gap-2">
+            <button 
+            onClick={onCloseMobile}
+            className="md:hidden absolute top-2 right-2 text-gray-400 hover:text-white p-1 rounded"
+        >
+            ✕
+        </button>
+        
           <button 
             onClick={onNewChatClick}
             className="flex-1 h-10 bg-[#6f46ff] hover:bg-[#5558e3] text-white rounded-lg font-medium text-sm flex items-center justify-center gap-2 transition-colors"

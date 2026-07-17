@@ -203,6 +203,13 @@ const ProfileSidebar = ({ currentRoom, user, onUserUpdate }) => {
             <aside className="w-72 h-screen bg-white border-l border-gray-200 flex flex-col overflow-y-auto">
                 {/*  Profile Header  */}
                 <div className="p-5 flex flex-col items-center border-b border-gray-100">
+                  <button 
+                     onClick={onCloseMobile}
+                     className="md:hidden absolute top-2 right-2 text-gray-500"
+                    >
+                        ✕
+                  </button>
+
                     {/* Avatar */}
                     <button
                         onClick={() => setShowPhotoModal(true)}
