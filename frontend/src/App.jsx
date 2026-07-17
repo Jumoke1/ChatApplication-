@@ -9,7 +9,7 @@ import MiddleChatarea from "./components/Sidebar/MiddleChatarea";
 
 function App() {
   return (
-    <div className="App">   // ← Keep the div, remove Router
+    <div className="App">
       <Routes>
         <Route path='/' element={<Navigate to='/login' replace />} />
         <Route path='/login' element={<Login />} />
