@@ -5,18 +5,21 @@ import { useState, useEffect, useRef } from 'react';
 import axios from 'axios';
 import { useSocket } from '../../context/SocketContext';
 
-const ProfileSidebar = ({ currentRoom, user, onUserUpdate }) => {
+const ProfileSidebar = ({ currentRoom, user, onUserUpdate, onCloseMobile }) => {
     // Auth & Socket 
-    const { token, logout } = useAuth();   // logout function from AuthContext
+    const { token, logout } = useAuth();
     const { socket } = useSocket();
 
-    //  State 
+    // API Base URL 
+    const API_BASE = import.meta.env.VITE_API_URL || 'http://localhost:5001';
+
+    // State 
     const [messagesCount, setMessagesCount] = useState(0);
     const [onlineUsers, setOnlineUsers] = useState([]);
     const [note, setNote] = useState("");
     const [saving, setSaving] = useState(false);
     const [openNotes, setOpenNotes] = useState(false);
-    const [showSettings, setShowSettings] = useState(false);   // controls Settings modal
+    const [showSettings, setShowSettings] = useState(false);
     const [showPhotoModal, setShowPhotoModal] = useState(false);
     const [isDarkMode, setIsDarkMode] = useState(false);
     const [notificationsEnabled, setNotificationsEnabled] = useState(true);
@@ -24,12 +27,12 @@ const ProfileSidebar = ({ currentRoom, user, onUserUpdate }) => {
     const [currentUser, setCurrentUser] = useState(user);
     const fileInputRef = useRef(null);
 
-    //  Debugging (optional, remove later)
+    // Debug
     useEffect(() => {
         console.log("🔹 showSettings changed to:", showSettings);
     }, [showSettings]);
 
-    //  Dark Mode 
+    // Dark Mode
     useEffect(() => {
         if (isDarkMode) {
             document.documentElement.classList.add('dark');
@@ -55,11 +58,11 @@ const ProfileSidebar = ({ currentRoom, user, onUserUpdate }) => {
         localStorage.setItem('notifications', notificationsEnabled);
     }, [notificationsEnabled]);
 
-    // Personal Notes 
+    // Personal Notes
     useEffect(() => {
         const loadNote = async () => {
             try {
-                const res = await axios.get('http://localhost:5001/api/notes/my-note', {
+                const res = await axios.get(`${API_BASE}/api/notes/my-note`, {
                     headers: { Authorization: `Bearer ${token}` }
                 });
                 setNote(res.data.content || "");
@@ -68,12 +71,12 @@ const ProfileSidebar = ({ currentRoom, user, onUserUpdate }) => {
             }
         };
         loadNote();
-    }, [token]);
+    }, [token, API_BASE]);
 
     const saveNote = async (value) => {
         try {
             setSaving(true);
-            await fetch("http://localhost:5001/api/notes/my-note", {
+            await fetch(`${API_BASE}/api/notes/my-note`, {
                 method: "PUT",
                 headers: {
                     "Content-Type": "application/json",
@@ -88,13 +91,13 @@ const ProfileSidebar = ({ currentRoom, user, onUserUpdate }) => {
         }
     };
 
-    //  Profile Photo 
+    // Profile Photo
     const getProfilePhoto = () => {
         if (currentUser?.profilePhoto && currentUser.profilePhoto.trim() !== '') {
             if (currentUser.profilePhoto.startsWith('http')) {
                 return currentUser.profilePhoto;
             }
-            return `http://localhost:5001${currentUser.profilePhoto}`;
+            return `${API_BASE}${currentUser.profilePhoto}`;
         }
         return null;
     };
@@ -119,7 +122,7 @@ const ProfileSidebar = ({ currentRoom, user, onUserUpdate }) => {
         try {
             setUploading(true);
             const response = await axios.put(
-                'http://localhost:5001/api/users/profile-photo',
+                `${API_BASE}/api/users/profile-photo`,
                 formData,
                 {
                     headers: {
@@ -150,7 +153,7 @@ const ProfileSidebar = ({ currentRoom, user, onUserUpdate }) => {
         try {
             setUploading(true);
             const response = await axios.delete(
-                'http://localhost:5001/api/users/profile-photo',
+                `${API_BASE}/api/users/profile-photo`,
                 { headers: { Authorization: `Bearer ${token}` } }
             );
 
@@ -170,14 +173,14 @@ const ProfileSidebar = ({ currentRoom, user, onUserUpdate }) => {
         }
     };
 
-    //  Message Count
+    // Message Count
     useEffect(() => {
         if (!currentRoom) return;
         const fetchMessagesCount = async () => {
             try {
                 const token = localStorage.getItem('token');
                 const res = await axios.get(
-                    `http://localhost:5001/api/messages/count/${currentRoom._id}`,
+                    `${API_BASE}/api/messages/count/${currentRoom._id}`,
                     { headers: { Authorization: `Bearer ${token}` } }
                 );
                 setMessagesCount(res.data.count);
@@ -186,9 +189,9 @@ const ProfileSidebar = ({ currentRoom, user, onUserUpdate }) => {
             }
         };
         fetchMessagesCount();
-    }, [currentRoom]);
+    }, [currentRoom, API_BASE]);
 
-    //  Online Users 
+    // Online Users
     useEffect(() => {
         if (!socket) return;
         socket.on('online-users', (users) => setOnlineUsers(users));
@@ -196,19 +199,20 @@ const ProfileSidebar = ({ currentRoom, user, onUserUpdate }) => {
         return () => socket.off('online-users');
     }, [socket]);
 
-
-    //  Render 
+    // Render
     return (
         <>
             <aside className="w-72 h-screen bg-white border-l border-gray-200 flex flex-col overflow-y-auto">
-                {/*  Profile Header  */}
-                <div className="p-5 flex flex-col items-center border-b border-gray-100">
-                  <button 
-                     onClick={onCloseMobile}
-                     className="md:hidden absolute top-2 right-2 text-gray-500"
+                {/* Profile Header */}
+                <div className="relative p-5 flex flex-col items-center border-b border-gray-100">
+                    {/* Close button – mobile only */}
+                    <button
+                        onClick={onCloseMobile}
+                        className="md:hidden absolute top-2 right-2 text-gray-500 hover:text-gray-700 p-1 rounded"
+                        aria-label="Close profile sidebar"
                     >
                         ✕
-                  </button>
+                    </button>
 
                     {/* Avatar */}
                     <button
@@ -299,11 +303,11 @@ const ProfileSidebar = ({ currentRoom, user, onUserUpdate }) => {
                     </div>
                 </div>
 
-                {/*  Bottom Settings button  */}
+                {/* Bottom Settings button */}
                 <div className="mt-auto p-4 border-t border-gray-100 bg-white">
                     <button
                         onClick={() => {
-                            console.log(' Bottom Settings clicked!');
+                            console.log('Bottom Settings clicked!');
                             setShowSettings(true);
                         }}
                         className="w-full flex items-center gap-3 px-3 py-2.5 rounded-lg hover:bg-gray-50 transition-all duration-200 group"
@@ -314,7 +318,7 @@ const ProfileSidebar = ({ currentRoom, user, onUserUpdate }) => {
                 </div>
             </aside>
 
-            {/* PHOTO MODAL  */}
+            {/* Photo Modal */}
             {showPhotoModal && (
                 <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
                     <div className="bg-white rounded-xl shadow-xl w-full max-w-md mx-4">
@@ -371,7 +375,7 @@ const ProfileSidebar = ({ currentRoom, user, onUserUpdate }) => {
                 </div>
             )}
 
-            {/*  NOTES MODAL  */}
+            {/* Notes Modal */}
             {openNotes && (
                 <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
                     <div className="bg-white rounded-xl shadow-xl w-full max-w-lg mx-4">
@@ -398,7 +402,7 @@ const ProfileSidebar = ({ currentRoom, user, onUserUpdate }) => {
                 </div>
             )}
 
-            {/* SETTINGS MODAL*/}
+            {/* Settings Modal */}
             {showSettings && (
                 <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
                     <div className="bg-white rounded-xl shadow-xl w-full max-w-md mx-4">
@@ -452,7 +456,7 @@ const ProfileSidebar = ({ currentRoom, user, onUserUpdate }) => {
                             </div>
                         </div>
 
-                        {/*  Done & Logout  */}
+                        {/* Done & Logout */}
                         <div className="p-5 border-t bg-gray-50 rounded-b-xl space-y-3">
                             <button
                                 onClick={() => setShowSettings(false)}
@@ -465,7 +469,7 @@ const ProfileSidebar = ({ currentRoom, user, onUserUpdate }) => {
                                     console.log('🔴 Logout button clicked inside modal');
                                     if (window.confirm('Are you sure you want to log out?')) {
                                         console.log('✅ User confirmed logout, calling logout()');
-                                        logout();  // this comes from AuthContext
+                                        logout();
                                     }
                                 }}
                                 className="w-full py-2.5 bg-red-50 hover:bg-red-100 text-red-600 font-medium rounded-lg transition-colors flex items-center justify-center gap-2"
