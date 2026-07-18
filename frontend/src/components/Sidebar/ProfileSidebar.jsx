@@ -466,9 +466,9 @@ const ProfileSidebar = ({ currentRoom, user, onUserUpdate, onCloseMobile }) => {
                             </button>
                             <button
                                 onClick={() => {
-                                    console.log('🔴 Logout button clicked inside modal');
+                                    console.log('git add Logout button clicked inside modal');
                                     if (window.confirm('Are you sure you want to log out?')) {
-                                        console.log('✅ User confirmed logout, calling logout()');
+                                        console.log(' User confirmed logout, calling logout()');
                                         logout();
                                     }
                                 }}
