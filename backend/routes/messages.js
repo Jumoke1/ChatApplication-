@@ -10,7 +10,7 @@ router.post('/:roomId', auth, async (req, res) => {
         const { content } = req.body;
         const { roomId } = req.params;
         
-        console.log('📨 Channel POST:', { roomId, content, userId: req.user._id });
+        console.log(' Channel POST:', { roomId, content, userId: req.user._id });
         
         if (!content) {
             return res.status(400).json({
@@ -48,7 +48,7 @@ router.post('/:roomId', auth, async (req, res) => {
         });
         
     } catch (error) {
-        console.error('❌ Channel POST Error:', error);
+        console.error(' Channel POST Error:', error);
         res.status(500).json({
             success: false,
             message: error.message
@@ -76,7 +76,7 @@ router.get('/:roomId', auth, async (req, res) => {
         });
         
     } catch (error) {
-        console.error('❌ Channel GET Error:', error);
+        console.error(' Channel GET Error:', error);
         res.status(500).json({
             success: false,
             message: error.message

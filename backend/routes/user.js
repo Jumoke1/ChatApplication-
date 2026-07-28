@@ -12,7 +12,7 @@ const uploadDir = path.join(__dirname, '../uploads/profile-photos');
 // make sure the folder exists before trying to save files
 if (!fs.existsSync(uploadDir)) {
     fs.mkdirSync(uploadDir, { recursive: true });
-    console.log('📁 Created upload directory:', uploadDir);
+    console.log(' Created upload directory:', uploadDir);
 }
 
 const storage = multer.diskStorage({
@@ -47,14 +47,14 @@ const upload = multer({
 // get all users except the current one
 router.get('/', auth, async (req, res, next) => {
     try {
-        console.log('📡 Fetching all users. Current user ID:', req.user._id);
+        console.log(' Fetching all users. Current user ID:', req.user._id);
 
         const users = await User.find(
             { _id: { $ne: req.user._id } },
             'fullname email profilePhoto online lastSeen'
         ).sort({ fullname: 1 });
         
-        console.log(`✅ Found ${users.length} users`);
+        console.log(` Found ${users.length} users`);
         
         res.json({
             success: true,
@@ -232,8 +232,8 @@ router.get('/me/profile', auth, async (req, res, next) => {
 // upload a new profile picture
 router.put('/profile-photo', auth, upload.single('profilePhoto'), async (req, res, next) => {
     try {
-        console.log('📸 Uploading profile photo...');
-        console.log('📁 File:', req.file);
+        console.log(' Uploading profile photo...');
+        console.log(' File:', req.file);
         
         if (!req.file) {
             const error = new Error('No file uploaded');
@@ -250,7 +250,7 @@ router.put('/profile-photo', auth, upload.single('profilePhoto'), async (req, re
             const oldPhotoPath = path.join(__dirname, '..', oldPhoto);
             if (fs.existsSync(oldPhotoPath)) {
                 fs.unlinkSync(oldPhotoPath);
-                console.log('🗑️ Deleted old profile photo:', oldPhoto);
+                console.log(' Deleted old profile photo:', oldPhoto);
             }
         }
         
@@ -262,7 +262,7 @@ router.put('/profile-photo', auth, upload.single('profilePhoto'), async (req, re
             { new: true, select: 'fullname email profilePhoto online lastSeen' }
         );
         
-        console.log('✅ Profile photo uploaded successfully:', profilePhotoUrl);
+        console.log(' Profile photo uploaded successfully:', profilePhotoUrl);
         
         res.json({
             success: true,
@@ -271,7 +271,7 @@ router.put('/profile-photo', auth, upload.single('profilePhoto'), async (req, re
             data: updatedUser
         });
     } catch (error) {
-        console.error('❌ Error uploading profile photo:', error.message);
+        console.error(' Error uploading profile photo:', error.message);
         // clean up the uploaded file if something went wrong
         if (req.file) {
             const filePath = path.join(uploadDir, req.file.filename);
@@ -286,7 +286,7 @@ router.put('/profile-photo', auth, upload.single('profilePhoto'), async (req, re
 // delete the user's profile picture entirely
 router.delete('/profile-photo', auth, async (req, res, next) => {
     try {
-        console.log('🗑️ Removing profile photo...');
+        console.log(' Removing profile photo...');
         
         const user = await User.findById(req.user._id);
         
@@ -294,7 +294,7 @@ router.delete('/profile-photo', auth, async (req, res, next) => {
             const photoPath = path.join(__dirname, '..', user.profilePhoto);
             if (fs.existsSync(photoPath)) {
                 fs.unlinkSync(photoPath);
-                console.log('🗑️ Deleted profile photo file:', user.profilePhoto);
+                console.log(' Deleted profile photo file:', user.profilePhoto);
             }
             
             await User.findByIdAndUpdate(
@@ -304,14 +304,14 @@ router.delete('/profile-photo', auth, async (req, res, next) => {
             );
         }
         
-        console.log('✅ Profile photo removed successfully');
+        console.log(' Profile photo removed successfully');
         
         res.json({
             success: true,
             message: 'Profile photo removed successfully'
         });
     } catch (error) {
-        console.error('❌ Error removing profile photo:', error.message);
+        console.error(' Error removing profile photo:', error.message);
         next(error);
     }
 });

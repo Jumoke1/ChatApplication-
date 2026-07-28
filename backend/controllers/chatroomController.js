@@ -4,7 +4,7 @@
 // exports.createChatRoom = async(req, res)=> {
 //   try {
 //     console.log('creating chat room with data:', req.body);
-//     console.log('👤 User ID from auth:', req.user?._id || req.user?.id);
+//     console.log(' User ID from auth:', req.user?._id || req.user?.id);
 
 //     const {name, description, participants = []} = req.body
 //     const createdBy = req.user?._id
@@ -110,7 +110,7 @@
 //     res.json(rooms);
 
 //   } catch (error) {
-//     console.error("❌ Get chat rooms error:", error);
+//     console.error(" Get chat rooms error:", error);
 //     res.status(500).json([]);
 //   }
 // };

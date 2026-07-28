@@ -12,19 +12,17 @@ const app = express();
 const server = http.createServer(app);
 const PORT = process.env.PORT || 5001;
 
-//  DEBUG: Check environment variables 
-console.log('═══════════════════════════════════════════════════');
-console.log('🔍 ENVIRONMENT VARIABLES CHECK:');
-console.log('───────────────────────────────────────────────────');
-console.log(`📌 PORT: ${process.env.PORT || '❌ NOT SET (using default 5001)'}`);
-console.log(`📌 MONGODB_URI: ${process.env.MONGODB_URI ? ' SET' : '❌ NOT SET'}`);
-console.log(`📌 JWT_SECRET: ${process.env.JWT_SECRET ? ' SET' : '❌ NOT SET'}`);
-console.log('───────────────────────────────────────────────────');
+//   Check environment variables 
+
+console.log(' ENVIRONMENT VARIABLES CHECK:');
+console.log(` PORT: ${process.env.PORT || ' NOT SET (using default 5001)'}`);
+console.log(` MONGODB_URI: ${process.env.MONGODB_URI ? ' SET' : ' NOT SET'}`);
+console.log(` JWT_SECRET: ${process.env.JWT_SECRET ? ' SET' : ' NOT SET'}`);
+
 
 // Show the actual MONGODB_URI being used 
 const MONGODB_URI = process.env.MONGODB_URI || 'mongodb://localhost:27017/chat-app';
-console.log(`📌 Using MONGODB_URI: ${MONGODB_URI}`);
-console.log('═══════════════════════════════════════════════════');
+console.log(` Using MONGODB_URI: ${MONGODB_URI}`);
 
 //  Basic middleware setup 
 app.use(cors());
@@ -33,7 +31,7 @@ app.use(express.urlencoded({ extended: true }));
 app.use("/uploads", express.static("uploads"));
 
 //  MongoDB Connection 
-console.log('🔄 Connecting to MongoDB...');
+console.log(' Connecting to MongoDB...');
 
 mongoose.connect(MONGODB_URI)
 .then(() => {
@@ -42,7 +40,7 @@ mongoose.connect(MONGODB_URI)
     console.log(` Host: ${mongoose.connection.host}`);
 })
 .catch(err => {
-    console.error('❌ MongoDB Connection Error:');
+    console.error(' MongoDB Connection Error:');
     console.error('   Error Name:', err.name);
     console.error('   Error Message:', err.message);
     console.error('   Full Error:', err);
@@ -58,8 +56,8 @@ const io = socketIo(server, {
         origin: [
             "http://localhost:5173",
             "http://localhost:5174",
-            FRONTEND_URL,  // ← Uses environment variable or fallback
-            "https://your-frontend-url.onrender.com"  // Remove this if not needed
+            FRONTEND_URL,  
+            "https://your-frontend-url.onrender.com"  
         ],
         methods: ["GET", "POST"],
         credentials: true,
@@ -214,7 +212,7 @@ io.on('connection', (socket) => {
 
     // call related events
     socket.on('call-user', (data) => {
-        console.log('\n=== CALL INITIATION ===');
+        console.log('\n CALL INITIATION');
         console.log('From:', data.from);
         console.log('To:', data.to);
         console.log('Type:', data.type);
@@ -234,11 +232,11 @@ io.on('connection', (socket) => {
             type: data.type,
             roomId: data.roomId
         });
-        console.log('=== CALL INITIATION END ===\n');
+        console.log(' CALL INITIATION END \n');
     });
 
     socket.on('call-accepted', (data) => {
-        console.log('\n=== CALL ACCEPTED ===');
+        console.log('\n CALL ACCEPTED ');
         console.log('To:', data.to);
         console.log('Room ID:', data.roomId);
         
@@ -253,11 +251,11 @@ io.on('connection', (socket) => {
             type: data.type,
             from: socket.userId
         });
-        console.log('=== CALL ACCEPTED END ===\n');
+        console.log(' CALL ACCEPTED END \n');
     });
 
     socket.on('call-rejected', (data) => {
-        console.log('\n=== CALL REJECTED ===');
+        console.log('\n CALL REJECTED ');
         console.log('To:', data.to);
         
         const targetSocketId = connectedUsers.get(data.to);
@@ -266,12 +264,12 @@ io.on('connection', (socket) => {
                 from: socket.userId
             });
         }
-        console.log('=== CALL REJECTED END ===\n');
+        console.log(' CALL REJECTED END \n');
     });
 
     // webrtc signaling - this is how peers find each other
     socket.on("call-signal", (data) => {
-        console.log('\n=== WEBRTC SIGNAL ===');
+        console.log('\n WEBRTC SIGNAL');
         console.log('Signal from:', socket.userId);
         console.log('Signal to:', data.to);
         console.log('Signal type:', data.signal?.type);
@@ -288,11 +286,11 @@ io.on('connection', (socket) => {
         });
         
         console.log(`Signal forwarded to user ${data.to}`);
-        console.log('=== WEBRTC SIGNAL END ===\n');
+        console.log(' WEBRTC SIGNAL END \n');
     });
 
     socket.on('end-call', (data) => {
-        console.log('\n=== CALL ENDED ===');
+        console.log('\n CALL ENDED ');
         console.log('From:', socket.userId);
         console.log('To:', data.to);
         
@@ -302,7 +300,7 @@ io.on('connection', (socket) => {
                 from: socket.userId
             });
         }
-        console.log('=== CALL ENDED ===\n');
+        console.log(' CALL ENDED \n');
     });
 
     // clean up when user disconnects
@@ -346,9 +344,7 @@ app.get('/api/protected', auth, (req, res) => {
 
 // Start Server 
 server.listen(PORT, () => {
-    console.log('═══════════════════════════════════════════════════');
-    console.log(`🚀 Server running on port ${PORT}`);
-    console.log(`📍 Test: http://localhost:${PORT}/api/test`);
-    console.log(`🌐 Live URL: https://chatapplication-d2k9.onrender.com`);
-    console.log('═══════════════════════════════════════════════════');
+    console.log(` Server running on port ${PORT}`);
+    console.log(` Test: http://localhost:${PORT}/api/test`);
+    console.log(` Live URL: https://chatapplication-d2k9.onrender.com`);
 });
