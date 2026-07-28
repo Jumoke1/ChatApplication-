@@ -48,25 +48,25 @@ export const SocketProvider = ({ children }) => {
 
     newSocket.on("connect", () => {
       setIsConnected(true);
-      console.log("✅ Connected to backend socket, ID:", newSocket.id);
+      console.log("Connected to backend socket, ID:", newSocket.id);
       
       if (userId) {
-        console.log("📝 Registering user for calls:", userId);
+        console.log(" Registering user for calls:", userId);
         newSocket.emit('register-user', userId);
         
         // join a personal room using colon format (matches what the server expects)
         newSocket.emit('joinRoom', `user:${userId}`);
-        console.log(`🏠 Joined personal room: user:${userId}`);
+        console.log(` Joined personal room: user:${userId}`);
       }
     });
 
     newSocket.on("disconnect", (reason) => {
-      console.log("❌ Disconnected from backend socket, reason:", reason);
+      console.log(" Disconnected from backend socket, reason:", reason);
       setIsConnected(false);
       
       // try to reconnect if the connection dropped unexpectedly
       if (reason === "transport close" || reason === "transport error") {
-        console.log("🔄 Attempting to reconnect...");
+        console.log(" Attempting to reconnect...");
         setTimeout(() => {
           if (!newSocket.connected) {
             newSocket.connect();
@@ -76,12 +76,12 @@ export const SocketProvider = ({ children }) => {
     });
 
     newSocket.on("connect_error", (error) => {
-      console.error("❌ Socket connection error:", error.message);
+      console.error(" Socket connection error:", error.message);
       setIsConnected(false);
     });
 
     newSocket.on("reconnect", (attemptNumber) => {
-      console.log("🔄 Socket reconnected after", attemptNumber, "attempts");
+      console.log(" Socket reconnected after", attemptNumber, "attempts");
       setIsConnected(true);
       if (userId) {
         newSocket.emit('register-user', userId);

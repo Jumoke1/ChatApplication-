@@ -3,7 +3,11 @@ import { useState, useEffect, useRef } from "react";
 import { dmAPI, channelAPI } from "../api"; 
 
 const TopNavbar = ({user, users, messages, recentDMs, onSelectUser,
-  onSelectDM, onSelectChannel}) => {
+  onSelectDM, onSelectChannel, onToggleSidebar, 
+    onToggleProfile, 
+    showSidebar, 
+    showProfile 
+}) => {
   const [showMobileSearch, setShowMobileSearch] = useState(false);
   const [isMobile, setIsMobile] = useState(false);
   const [query, setQuery] = useState("");
@@ -11,11 +15,11 @@ const TopNavbar = ({user, users, messages, recentDMs, onSelectUser,
   const [unreadChannels, setUnreadChannels] = useState([]);
   const [unreadCount, setUnreadCount] = useState(0);
   const [showNotifications, setShowNotifications] = useState(false);
-  const notificationRef = useRef(null); // used to detect clicks outside the notification panel
+  const notificationRef = useRef(null);
 
   const safeQuery = query.trim().toLowerCase();
 
-  // grab unread message counts from both dms and channels
+  // fetch unread message counts
   const fetchUnreadData = async () => {
     try {
       const dmDetailsRes = await dmAPI.getUnreadDetails();
@@ -38,22 +42,20 @@ const TopNavbar = ({user, users, messages, recentDMs, onSelectUser,
     }
   };
 
-  // load unread counts on mount and refresh every 30 seconds
+  // refresh unread counts every 30 seconds
   useEffect(() => {
     fetchUnreadData();
-    
     const interval = setInterval(fetchUnreadData, 30000);
     return () => clearInterval(interval);
   }, []);
   
-  // close notification panel when user clicks outside of it
+  // close notification panel on outside click
   useEffect(() => {
     const handleClickOutside = (event) => {
       if (notificationRef.current && !notificationRef.current.contains(event.target)) {
         setShowNotifications(false);
       }
     };
-    
     document.addEventListener('mousedown', handleClickOutside);
     return () => document.removeEventListener('mousedown', handleClickOutside);
   }, []);
@@ -80,21 +82,19 @@ const TopNavbar = ({user, users, messages, recentDMs, onSelectUser,
     setUnreadCount(0);
   };
   
-  // user clicked on a dm notification - mark as read and open the conversation
   const handleDMNotificationClick = async (dm) => {
     await handleMarkDMAsRead(dm.roomId);
     onSelectDM(dm);
     setShowNotifications(false);
   };
   
-  // user clicked on a channel notification - mark as read and open the channel
   const handleChannelNotificationClick = async (channel) => {
     await handleMarkChannelAsRead(channel.roomId);
     onSelectChannel({ id: channel.roomId, name: channel.name });
     setShowNotifications(false);
   };
 
-  // filter users, messages, and dms based on search query
+  // search filters
   const filteredUsers = safeQuery
     ? users.filter(u => u.fullname.toLowerCase().includes(safeQuery))
     : users;
@@ -107,19 +107,17 @@ const TopNavbar = ({user, users, messages, recentDMs, onSelectUser,
     ? recentDMs.filter(dm => dm.userName?.toLowerCase().includes(safeQuery))
     : recentDMs;
 
-  // detect if we're on a mobile screen
+  // detect mobile screen
   useEffect(() => {
     const checkScreenSize = () => {
       setIsMobile(window.innerWidth < 768);
     };
-
     checkScreenSize();
     window.addEventListener('resize', checkScreenSize);
-    
     return () => window.removeEventListener('resize', checkScreenSize);
   }, []);
 
-  // close mobile search when switching back to desktop view
+  // close mobile search on desktop
   useEffect(() => {
     if (!isMobile) {
       setShowMobileSearch(false);
@@ -137,8 +135,17 @@ const TopNavbar = ({user, users, messages, recentDMs, onSelectUser,
   return (
     <nav className="w-full h-16 bg-gradient-to-r from-[#6252fe] via-[#526bff] to-[#11bdff] px-4 md:px-6 flex items-center justify-between shadow-md relative">
       
-      {/* logo section on the left */}
+      {/* Left side: logo + mobile hamburger */}
       <div className="flex items-center gap-3 flex-shrink-0">
+        {/*  Mobile hamburger button shows left sidebar */}
+        <button 
+          onClick={onToggleSidebar}
+          className="md:hidden text-white hover:bg-white/10 rounded-lg p-2 transition-colors"
+          aria-label="Toggle sidebar"
+        >
+          ☰
+        </button>
+        
         <div className="w-8 h-8 md:w-10 md:h-10 bg-[#4c1d95] rounded-lg flex items-center justify-center">
           <IoChatbubbleEllipses className="w-5 h-5 md:w-6 md:h-6 text-white" />
         </div>
@@ -147,7 +154,7 @@ const TopNavbar = ({user, users, messages, recentDMs, onSelectUser,
         </span>
       </div>
 
-      {/* desktop search bar */}
+      {/* Center: desktop search bar */}
       <div className="hidden md:block flex-1 max-w-xl mx-4 lg:mx-8">
         <div className="relative w-full">
           <IoSearch className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-white" />
@@ -233,7 +240,7 @@ const TopNavbar = ({user, users, messages, recentDMs, onSelectUser,
         </div>
       </div>
 
-      {/* full screen search overlay for mobile */}
+      {/* Mobile search overlay  */}
       {showMobileSearch && (
         <div className="md:hidden fixed inset-0 z-50 bg-gradient-to-r from-[#6252fe] via-[#526bff] to-[#11bdff] p-4 flex items-center">
           <div className="relative w-full">
@@ -256,9 +263,9 @@ const TopNavbar = ({user, users, messages, recentDMs, onSelectUser,
         </div>
       )}
 
-      {/* right side - notifications and user profile */}
+      {/*  Right side: search, notifications, profile  */}
       <div className="flex items-center gap-3 md:gap-4 flex-shrink-0">
-        {/* mobile search toggle button */}
+        {/* Mobile search toggle */}
         <button 
           className="md:hidden p-2 text-white hover:bg-white/10 rounded-lg transition-colors"
           onClick={() => setShowMobileSearch(true)}
@@ -266,7 +273,16 @@ const TopNavbar = ({user, users, messages, recentDMs, onSelectUser,
           <IoSearch className="w-5 h-5" />
         </button>
 
-        {/* notification bell with dropdown panel */}
+        {/*  Mobile profile toggle – shows right sidebar */}
+        <button 
+          onClick={onToggleProfile}
+          className="md:hidden text-white hover:bg-white/10 rounded-lg p-2 transition-colors"
+          aria-label="Toggle profile"
+        >
+          👤
+        </button>
+
+        {/* Notification bell */}
         <div className="relative" ref={notificationRef}>
           <button 
             onClick={() => setShowNotifications(!showNotifications)}
@@ -274,8 +290,6 @@ const TopNavbar = ({user, users, messages, recentDMs, onSelectUser,
             aria-label="Notifications"
           >
             <IoNotifications className="w-5 h-5 md:w-6 md:h-6" />
-            
-            {/* badge showing total unread count */}
             {unreadCount > 0 && (
               <div className="absolute -top-1 -right-1 min-w-[1.25rem] h-5 bg-red-500 rounded-full flex items-center justify-center px-1 shadow-lg">
                 <span className="text-white text-xs font-bold">
@@ -285,7 +299,7 @@ const TopNavbar = ({user, users, messages, recentDMs, onSelectUser,
             )}
           </button>
 
-          {/* notification dropdown panel */}
+          {/* Notification dropdown */}
           {showNotifications && (
             <div className="absolute right-0 mt-2 w-80 bg-white rounded-lg shadow-xl z-50 overflow-hidden">
               <div className="p-3 border-b border-gray-200 flex justify-between items-center">
@@ -308,7 +322,6 @@ const TopNavbar = ({user, users, messages, recentDMs, onSelectUser,
               </div>
               
               <div className="max-h-96 overflow-y-auto">
-                {/* list of unread direct messages */}
                 {unreadDMs.map(dm => (
                   <div 
                     key={dm.roomId}
@@ -337,7 +350,6 @@ const TopNavbar = ({user, users, messages, recentDMs, onSelectUser,
                   </div>
                 ))}
 
-                {/* list of unread channels */}
                 {unreadChannels.map(channel => (
                   <div 
                     key={channel.roomId}
@@ -366,7 +378,6 @@ const TopNavbar = ({user, users, messages, recentDMs, onSelectUser,
                   </div>
                 ))}
 
-                {/* show this when there are no unread messages */}
                 {unreadCount === 0 && (
                   <div className="p-8 text-center">
                     <IoNotifications className="w-12 h-12 text-gray-300 mx-auto mb-2" />
@@ -381,7 +392,7 @@ const TopNavbar = ({user, users, messages, recentDMs, onSelectUser,
           )}
         </div>
 
-        {/* user avatar / profile button */}
+        {/* User avatar (desktop) */}
         <div className="flex items-center gap-2 cursor-pointer hover:opacity-90 transition-opacity">
           <div className="w-7 h-7 md:w-8 md:h-8 rounded-full bg-white flex items-center justify-center font-bold text-purple-600">
             {getInitials(user?.fullname)}

@@ -19,10 +19,10 @@ const UserSearchModal = ({ isOpen, onClose, currentUser, onSelectUser}) => {
     const fetchAllUser = async () => {
         setLoading(true); 
         try {
-            console.log('📡 Fetching users from /api/users...');
+            console.log(' Fetching users from /api/users...');
             const response = await api.get('/users');
-            console.log('✅ API Response:', response.data);
-            console.log('✅ Response data structure:', response.data.data);
+            console.log(' API Response:', response.data);
+            console.log(' Response data structure:', response.data.data);
 
             // remove the current user from the list and clean up the data
             const validUsers = (response.data.data || [])
@@ -32,7 +32,7 @@ const UserSearchModal = ({ isOpen, onClose, currentUser, onSelectUser}) => {
                     id: user.id || user._id 
                 }));
 
-            console.log('✅ After filtering - Valid users:', validUsers);
+            console.log('After filtering - Valid users:', validUsers);
             setUsers(validUsers);
         } catch (error) {
             console.error('Error fetching users:', error);
@@ -110,7 +110,7 @@ const UserSearchModal = ({ isOpen, onClose, currentUser, onSelectUser}) => {
                                 <button
                                     key={user.id || user._id}
                                     onClick={() => {
-                                        console.log('🟢 CLICKED USER:', user);
+                                        console.log(' CLICKED USER:', user);
                                         console.log('User ID:', user.id || user._id);
                                         console.log('User Name:', user.fullname);
 
@@ -122,14 +122,14 @@ const UserSearchModal = ({ isOpen, onClose, currentUser, onSelectUser}) => {
                                             profilePhoto: user.profilePhoto
                                         };
                                         
-                                        console.log('📤 Sending to onSelectUser:', userData);
-                                        console.log('📤 Is onSelectUser a function?', typeof onSelectUser === 'function');
+                                        console.log(' Sending to onSelectUser:', userData);
+                                        console.log(' Is onSelectUser a function?', typeof onSelectUser === 'function');
 
                                         if (onSelectUser && typeof onSelectUser === 'function') {
                                             onSelectUser(userData);
-                                            console.log('✅ onSelectUser called successfully');
+                                            console.log(' onSelectUser called successfully');
                                         } else {
-                                            console.error('❌ onSelectUser is undefined or not a function!', onSelectUser);
+                                            console.error('onSelectUser is undefined or not a function!', onSelectUser);
                                         }
 
                                         onClose();

@@ -1,4 +1,4 @@
-// ─── Load environment variables FIRST ──────────────────────
+// Load environment variables FIRST
 require('dotenv').config();
 
 const express = require('express');
@@ -12,52 +12,53 @@ const app = express();
 const server = http.createServer(app);
 const PORT = process.env.PORT || 5001;
 
-// ─── 🔍 DEBUG: Check environment variables ──────────────────
-console.log('═══════════════════════════════════════════════════');
-console.log('🔍 ENVIRONMENT VARIABLES CHECK:');
-console.log('───────────────────────────────────────────────────');
-console.log(`📌 PORT: ${process.env.PORT || '❌ NOT SET (using default 5001)'}`);
-console.log(`📌 MONGODB_URI: ${process.env.MONGODB_URI ? '✅ SET' : '❌ NOT SET'}`);
-console.log(`📌 JWT_SECRET: ${process.env.JWT_SECRET ? '✅ SET' : '❌ NOT SET'}`);
-console.log('───────────────────────────────────────────────────');
+//   Check environment variables 
 
-// ─── Show the actual MONGODB_URI being used ─────────────────
+console.log(' ENVIRONMENT VARIABLES CHECK:');
+console.log(` PORT: ${process.env.PORT || ' NOT SET (using default 5001)'}`);
+console.log(` MONGODB_URI: ${process.env.MONGODB_URI ? ' SET' : ' NOT SET'}`);
+console.log(` JWT_SECRET: ${process.env.JWT_SECRET ? ' SET' : ' NOT SET'}`);
+
+
+// Show the actual MONGODB_URI being used 
 const MONGODB_URI = process.env.MONGODB_URI || 'mongodb://localhost:27017/chat-app';
-console.log(`📌 Using MONGODB_URI: ${MONGODB_URI}`);
-console.log('═══════════════════════════════════════════════════');
+console.log(` Using MONGODB_URI: ${MONGODB_URI}`);
 
-// basic middleware setup
+//  Basic middleware setup 
 app.use(cors());
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 app.use("/uploads", express.static("uploads"));
 
-// ─── ✅ MongoDB Connection ──────────────────────────────────
-console.log('🔄 Connecting to MongoDB...');
+//  MongoDB Connection 
+console.log(' Connecting to MongoDB...');
 
-mongoose.connect(MONGODB_URI, {
-    useNewUrlParser: true,
-    useUnifiedTopology: true,
-    serverSelectionTimeoutMS: 5000, // Timeout after 5s instead of 30s
-    socketTimeoutMS: 45000,
-})
+mongoose.connect(MONGODB_URI)
 .then(() => {
-    console.log('✅ MongoDB Connected Successfully');
-    console.log(`📌 Database: ${mongoose.connection.name}`);
-    console.log(`📌 Host: ${mongoose.connection.host}`);
+    console.log(' MongoDB Connected Successfully');
+    console.log(` Database: ${mongoose.connection.name}`);
+    console.log(` Host: ${mongoose.connection.host}`);
 })
 .catch(err => {
-    console.error('❌ MongoDB Connection Error:');
+    console.error(' MongoDB Connection Error:');
     console.error('   Error Name:', err.name);
     console.error('   Error Message:', err.message);
     console.error('   Full Error:', err);
     process.exit(1);
 });
 
-// ─── Socket.io Configuration ──────────────────────────────
+//  Socket.io Configuration 
+// Get frontend URL from environment or use fallback
+const FRONTEND_URL = process.env.FRONTEND_URL || 'https://flowchat-frontend-ll85.onrender.com';
+
 const io = socketIo(server, {
     cors: {
-        origin: ["http://localhost:5174", "http://localhost:5173", "https://your-frontend-url.onrender.com"],
+        origin: [
+            "http://localhost:5173",
+            "http://localhost:5174",
+            FRONTEND_URL,  
+            "https://your-frontend-url.onrender.com"  
+        ],
         methods: ["GET", "POST"],
         credentials: true,
         allowedHeaders: ["my-custom-header"]
@@ -211,7 +212,7 @@ io.on('connection', (socket) => {
 
     // call related events
     socket.on('call-user', (data) => {
-        console.log('\n=== CALL INITIATION ===');
+        console.log('\n CALL INITIATION');
         console.log('From:', data.from);
         console.log('To:', data.to);
         console.log('Type:', data.type);
@@ -231,11 +232,11 @@ io.on('connection', (socket) => {
             type: data.type,
             roomId: data.roomId
         });
-        console.log('=== CALL INITIATION END ===\n');
+        console.log(' CALL INITIATION END \n');
     });
 
     socket.on('call-accepted', (data) => {
-        console.log('\n=== CALL ACCEPTED ===');
+        console.log('\n CALL ACCEPTED ');
         console.log('To:', data.to);
         console.log('Room ID:', data.roomId);
         
@@ -250,11 +251,11 @@ io.on('connection', (socket) => {
             type: data.type,
             from: socket.userId
         });
-        console.log('=== CALL ACCEPTED END ===\n');
+        console.log(' CALL ACCEPTED END \n');
     });
 
     socket.on('call-rejected', (data) => {
-        console.log('\n=== CALL REJECTED ===');
+        console.log('\n CALL REJECTED ');
         console.log('To:', data.to);
         
         const targetSocketId = connectedUsers.get(data.to);
@@ -263,12 +264,12 @@ io.on('connection', (socket) => {
                 from: socket.userId
             });
         }
-        console.log('=== CALL REJECTED END ===\n');
+        console.log(' CALL REJECTED END \n');
     });
 
     // webrtc signaling - this is how peers find each other
     socket.on("call-signal", (data) => {
-        console.log('\n=== WEBRTC SIGNAL ===');
+        console.log('\n WEBRTC SIGNAL');
         console.log('Signal from:', socket.userId);
         console.log('Signal to:', data.to);
         console.log('Signal type:', data.signal?.type);
@@ -285,11 +286,11 @@ io.on('connection', (socket) => {
         });
         
         console.log(`Signal forwarded to user ${data.to}`);
-        console.log('=== WEBRTC SIGNAL END ===\n');
+        console.log(' WEBRTC SIGNAL END \n');
     });
 
     socket.on('end-call', (data) => {
-        console.log('\n=== CALL ENDED ===');
+        console.log('\n CALL ENDED ');
         console.log('From:', socket.userId);
         console.log('To:', data.to);
         
@@ -299,7 +300,7 @@ io.on('connection', (socket) => {
                 from: socket.userId
             });
         }
-        console.log('=== CALL ENDED ===\n');
+        console.log(' CALL ENDED \n');
     });
 
     // clean up when user disconnects
@@ -312,7 +313,7 @@ io.on('connection', (socket) => {
     });
 });
 
-// ─── API Routes ──────────────────────────────────────────────
+// API Routes 
 const auth = require('./middleware/auth');
 const authRoutes = require('./routes/auth');
 const chatRoomRoutes = require('./routes/chatRooms');
@@ -341,11 +342,9 @@ app.get('/api/protected', auth, (req, res) => {
     res.json({ message: 'You accessed a protected route', user: req.user });
 });
 
-// ─── Start Server ──────────────────────────────────────────────
+// Start Server 
 server.listen(PORT, () => {
-    console.log('═══════════════════════════════════════════════════');
-    console.log(`🚀 Server running on port ${PORT}`);
-    console.log(`📍 Test: http://localhost:${PORT}/api/test`);
-    console.log(`🌐 Live URL: https://chatapplication-d2k9.onrender.com`);
-    console.log('═══════════════════════════════════════════════════');
+    console.log(` Server running on port ${PORT}`);
+    console.log(` Test: http://localhost:${PORT}/api/test`);
+    console.log(` Live URL: https://chatapplication-d2k9.onrender.com`);
 });

@@ -1,5 +1,6 @@
 import { createContext, useContext, useState, useEffect } from "react";
-import { useSocket } from "./socketContext";
+import { useSocket } from "./SocketContext";
+
 
 const AuthContext = createContext();
 
@@ -47,7 +48,7 @@ export const AuthProvider = ({ children }) => {
         // eslint-disable-next-line react-hooks/exhaustive-deps
     }, []);
 
-    // ─── Login ──────────────────────────────────────────────
+    //  Login 
     const login = (userData, jwt) => {
         setUser(userData);
         setToken(jwt);
@@ -57,7 +58,7 @@ export const AuthProvider = ({ children }) => {
         
         connectSocket(jwt);
         
-        console.log('✅ User logged in:', userData.fullname);
+        console.log(' User logged in:', userData.fullname);
     };
 
     //  Logout 
@@ -85,7 +86,7 @@ export const AuthProvider = ({ children }) => {
         localStorage.setItem("user", JSON.stringify(newUser));
     };
 
-    // ─── Provide context ──────────────────────────────────
+    // Provide context 
     return (
         <AuthContext.Provider value={{ 
             user, 

@@ -4,7 +4,7 @@ const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
 const User = require('../models/User');
 const auth = require('../middleware/auth');
-const { uploadSingle } = require('../middleware/upload'); // ✅ Fix: Import upload properly
+const { uploadSingle } = require('../middleware/upload'); // 
 
 // Register
 router.post('/register', async (req, res) => {
@@ -112,7 +112,7 @@ router.post('/login', async (req, res) => {
     }
 });
 
-// ✅ FIXED: Upload profile photo
+//  Upload profile photo
 router.put("/profile-photo", auth, uploadSingle('profile'), async (req, res) => {
     try {
         if (!req.file) {
@@ -202,7 +202,7 @@ router.put('/profile', auth, async (req, res) => {
     }
 });
 
-// Logout (optional - just for tracking)
+// Logout 
 router.post('/logout', auth, async (req, res) => {
     try {
         // Update user status

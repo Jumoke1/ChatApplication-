@@ -10,7 +10,7 @@ router.post('/:dmRoomId', auth, async (req, res) => {
         const { content } = req.body;
         const { dmRoomId } = req.params;
         
-        console.log('📨 DM POST:', { dmRoomId, content, userId: req.user._id });
+        console.log('DM POST:', { dmRoomId, content, userId: req.user._id });
         
         if (!content) {
             return res.status(400).json({
@@ -75,7 +75,7 @@ router.post('/:dmRoomId', auth, async (req, res) => {
         });
         
     } catch (error) {
-        console.error('❌ DM POST Error:', error);
+        console.error(' DM POST Error:', error);
         res.status(500).json({
             success: false,
             message: error.message
@@ -87,7 +87,7 @@ router.post('/:dmRoomId', auth, async (req, res) => {
 router.get('/:dmRoomId', auth, async (req, res) => {
     try {
         const { dmRoomId } = req.params;
-        console.log('📨 DM GET:', dmRoomId);
+        console.log(' DM GET:', dmRoomId);
         
         const messages = await Message.find({
             dmRoomId: dmRoomId,
@@ -102,7 +102,7 @@ router.get('/:dmRoomId', auth, async (req, res) => {
         });
         
     } catch (error) {
-        console.error('❌ DM GET Error:', error);
+        console.error(' DM GET Error:', error);
         res.status(500).json({
             success: false,
             message: error.message
@@ -203,7 +203,8 @@ router.get('/unread/count', auth, async (req, res) => {
 
     } catch (error) {
         console.error('Error fetching unread DM count:', error);
-        res.status(500).json({
+        res.status(500).
+        json({
             success: false,
             message: error.message
         });
