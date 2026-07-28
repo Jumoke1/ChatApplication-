@@ -203,7 +203,8 @@ router.get('/unread/count', auth, async (req, res) => {
 
     } catch (error) {
         console.error('Error fetching unread DM count:', error);
-        res.status(500).json({
+        res.status(500).
+        json({
             success: false,
             message: error.message
         });
