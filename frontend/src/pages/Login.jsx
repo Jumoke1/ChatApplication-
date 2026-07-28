@@ -146,7 +146,7 @@ const Login = () => {
         password,
       });
 
-      console.log('=== LOGIN RESPONSE ===');
+      console.log(' LOGIN RESPONSE ');
       console.log('Response data:', response.data);
 
       if (response.status >= 200 && response.status < 300) {

@@ -29,7 +29,7 @@ const ProfileSidebar = ({ currentRoom, user, onUserUpdate, onCloseMobile }) => {
 
     // Debug
     useEffect(() => {
-        console.log("🔹 showSettings changed to:", showSettings);
+        console.log("showSettings changed to:", showSettings);
     }, [showSettings]);
 
     // Dark Mode
@@ -253,7 +253,7 @@ const ProfileSidebar = ({ currentRoom, user, onUserUpdate, onCloseMobile }) => {
                         </div>
                         <button
                             onClick={() => {
-                                console.log('⚙️ Gear clicked!');
+                                console.log(' Gear clicked!');
                                 setShowSettings(true);
                             }}
                             className="p-2 hover:bg-gray-100 rounded-full transition-colors"

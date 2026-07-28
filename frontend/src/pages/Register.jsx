@@ -5,7 +5,7 @@ import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext.jsx';
 
 const Signup = () => {
-  const [activeTab, setActiveTab] = useState('signup'); // default tab
+  const [activeTab, setActiveTab] = useState('signup');
   const [formData, setFormData] = useState({
     fullname: "",
     email: "",

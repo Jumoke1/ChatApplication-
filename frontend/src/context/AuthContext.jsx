@@ -58,7 +58,7 @@ export const AuthProvider = ({ children }) => {
         
         connectSocket(jwt);
         
-        console.log('✅ User logged in:', userData.fullname);
+        console.log(' User logged in:', userData.fullname);
     };
 
     //  Logout 

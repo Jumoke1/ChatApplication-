@@ -45,12 +45,12 @@ const MiddleChatarea = ({
     };
 
     useEffect(() => {
-        console.log("🟢 [MiddleChatarea] activeCall state changed:", activeCall);
+        console.log(" [MiddleChatarea] activeCall state changed:", activeCall);
     }, [activeCall]);
 
     useEffect(() => {
-        console.log("🟢 [MiddleChatarea] Component mounted");
-        return () => console.log("🔴 [MiddleChatarea] Component unmounted");
+        console.log(" [MiddleChatarea] Component mounted");
+        return () => console.log(" [MiddleChatarea] Component unmounted");
     }, []);
 
     // format time for display (just hour:minute)
@@ -146,7 +146,7 @@ const MiddleChatarea = ({
 
     // start a voice call
     const handleVoiceCall = () => {
-        console.log("🎵🔵 [handleVoiceCall] called");
+        console.log(" [handleVoiceCall] called");
         
         if (!activeDm) {
             alert("Calls only work in direct messages");
@@ -154,11 +154,11 @@ const MiddleChatarea = ({
         }
         
         if (callActiveRef.current) {
-            console.log("⚠️ Already in a call, ignoring");
+            console.log(" Already in a call, ignoring");
             return;
         }
         
-        console.log("📞 Initiating voice call to:", activeDm.userId);
+        console.log(" Initiating voice call to:", activeDm.userId);
         callActiveRef.current = true;
         
         const newCallId = `${Date.now()}_${activeDm.userId}`;
@@ -180,12 +180,12 @@ const MiddleChatarea = ({
             fromName: currentUser.fullname,
             roomId: activeDm.roomId
         });
-        console.log("📤 Emitted call-user event");
+        console.log(" Emitted call-user event");
     };
 
     // start a video call
     const handleVideoCall = () => {
-        console.log("🎥🔵 [handleVideoCall] called");
+        console.log(" [handleVideoCall] called");
         
         if (!activeDm) {
             alert("Calls only work in direct messages");
@@ -193,11 +193,11 @@ const MiddleChatarea = ({
         }
         
         if (callActiveRef.current) {
-            console.log("⚠️ Already in a call, ignoring");
+            console.log(" Already in a call, ignoring");
             return;
         }
         
-        console.log("📹 Initiating video call to:", activeDm.userId);
+        console.log(" Initiating video call to:", activeDm.userId);
         callActiveRef.current = true;
         
         const newCallId = `${Date.now()}_${activeDm.userId}`;
@@ -219,20 +219,20 @@ const MiddleChatarea = ({
             fromName: currentUser.fullname,
             roomId: activeDm.roomId
         });
-        console.log("📤 Emitted call-user event");
+        console.log(" Emitted call-user event");
     };
 
     // accept an incoming call
     const acceptCall = () => {
-        console.log("✅🔵 [acceptCall] called");
+        console.log(" [acceptCall] called");
         
         if (!incomingCall) return;
         if (callActiveRef.current) {
-            console.log("⚠️ Already in a call, cannot accept");
+            console.log(" Already in a call, cannot accept");
             return;
         }
         
-        console.log("✅ Accepting call from:", incomingCall.from);
+        console.log(" Accepting call from:", incomingCall.from);
         callActiveRef.current = true;
         
         const newCallId = `${Date.now()}_${incomingCall.from}`;
@@ -255,13 +255,13 @@ const MiddleChatarea = ({
                 roomId: incomingCall.roomId,
                 type: incomingCall.type
             });
-            console.log("📤 Emitted call-accepted event");
+            console.log(" Emitted call-accepted event");
         }, 300);
     };
 
     // reject an incoming call
     const rejectCall = () => {
-        console.log("❌🔵 [rejectCall] called");
+        console.log(" [rejectCall] called");
         if (!incomingCall) return;
         
         socket.emit("call-rejected", { to: incomingCall.from });
@@ -270,10 +270,10 @@ const MiddleChatarea = ({
 
     // hang up the current call
     const endCall = () => {
-        console.log("🔴🔵 [endCall] called");
+        console.log(" [endCall] called");
         
         if (!callActiveRef.current) {
-            console.log("🔴 No active call to end");
+            console.log(" No active call to end");
             return;
         }
         
@@ -302,15 +302,15 @@ const MiddleChatarea = ({
         if (!socket) return;
         
         const catchAllSignals = (data) => {
-            console.log("🚨 [GLOBAL] call-signal received:", data.signal?.type);
+            console.log(" [GLOBAL] call-signal received:", data.signal?.type);
             
             if (data.signal?.type === "offer") {
-                console.log("📦 Storing offer globally");
+                console.log(" Storing offer globally");
                 if (typeof window !== 'undefined') {
                     window.globalPendingOffer = data;
                 }
             } else if (data.signal?.type === "ice") {
-                console.log("📦 Storing ICE candidate globally");
+                console.log(" Storing ICE candidate globally");
                 if (typeof window !== 'undefined') {
                     if (!window.globalPendingIceCandidates) {
                         window.globalPendingIceCandidates = [];
@@ -332,7 +332,7 @@ const MiddleChatarea = ({
         if (!socket) return;
         
         const handleIncomingCall = (data) => {
-            console.log("🔔 INCOMING CALL RECEIVED");
+            console.log(" INCOMING CALL RECEIVED");
             
             if (callActiveRef.current) {
                 socket.emit("call-rejected", { to: data.from });
@@ -353,7 +353,7 @@ const MiddleChatarea = ({
         if (!socket) return;
         
         const handleCallStarted = (data) => {
-            console.log("📞 Call started event received:", data);
+            console.log(" Call started event received:", data);
         };
         
         socket.on("call-started", handleCallStarted);
@@ -368,7 +368,7 @@ const MiddleChatarea = ({
         if (!socket) return;
         
         const handleCallEnded = () => {
-            console.log("🔴 Call ended by other user");
+            console.log(" Call ended by other user");
             callActiveRef.current = false;
             setActiveCall(null);
             setCallType(null);
@@ -393,7 +393,7 @@ const MiddleChatarea = ({
         if (!socket) return;
         
         const handleCallError = (data) => {
-            console.error("❌ Call error:", data.message);
+            console.error(" Call error:", data.message);
             alert(data.message);
             callActiveRef.current = false;
             setActiveCall(null);
@@ -675,7 +675,7 @@ const MiddleChatarea = ({
                                                 <span className="ml-1">
                                                     {msg.status === "sent" && "✓"}
                                                     {msg.status === "delivered" && "✓✓"}
-                                                    {msg.status === "seen" && "👁️"}
+                                                    {msg.status === "seen" }
                                                 </span>
                                             )}
                                         </div>

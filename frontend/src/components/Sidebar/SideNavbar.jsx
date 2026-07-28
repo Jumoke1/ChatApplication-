@@ -11,7 +11,7 @@ const LeftSideBar = ({
     currentRoom,
     currentUser,
     messages: propMessages = [],
-    onCloseMobile    // added for mobile close button
+    onCloseMobile   
 }) => {
     //  API Base URL 
     const API_BASE = import.meta.env.VITE_API_URL || 'http://localhost:5001';
